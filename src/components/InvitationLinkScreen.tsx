@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import HeroSection from './HeroSection';
+import { useNavigate } from 'react-router-dom';
 
 interface InvitationLinkScreenProps {
   onNext: () => void;
@@ -10,6 +11,7 @@ const InvitationLinkScreen: React.FC<InvitationLinkScreenProps> = ({ onNext }) =
   const { invitationLogin, isLoading } = useAuth();
   const [invitationLink, setInvitationLink] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +22,7 @@ const InvitationLinkScreen: React.FC<InvitationLinkScreenProps> = ({ onNext }) =
       const success = await invitationLogin(invitationLink.trim());
       if (success) {
         console.log('Invitation login successful');
-        onNext();
+        navigate('/view-only');
       } else {
         console.log('Invitation login failed');
         setError('Invalid invitation link. Please check and try again.');

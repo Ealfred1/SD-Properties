@@ -1,26 +1,24 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import WelcomeScreen from './components/WelcomeScreen';
 import PasscodeScreen from './components/PasscodeScreen';
 import AccountTypeScreen from './components/AccountTypeScreen';
 import LoginScreen from './components/LoginScreen';
+import TenantWelcomeScreen from './components/TenantWelcomeScreen';
+import TenantPasscodeScreen from './components/TenantPasscodeScreen';
+import InvitationLinkScreen from './components/InvitationLinkScreen';
 import EnhancedDashboardLayout from './components/EnhancedDashboardLayout';
-import SignupModal from './components/SignupModal';
+import TenantDashboard from './components/TenantDashboard';
+import ViewOnlyDashboard from './components/ViewOnlyDashboard';
 
-type Screen = 'welcome' | 'passcode' | 'accountType' | 'login' | 'dashboard';
-
-function AppContent() {
-  const { user, isLoading } = useAuth();
-  const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
-  const [showSignupModal, setShowSignupModal] = useState(false);
-  const [selectedFlat, setSelectedFlat] = useState('Flat 1');
-
-  // Show loading screen while checking authentication
+function RequireAuth({ children, role }: { children: React.ReactNode; role?: string }) {
+  const { user, tenantData, isLoading } = useAuth();
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
             <span className="text-white text-sm font-bold">S</span>
           </div>
           <div className="text-lg font-semibold text-gray-900">Loading...</div>
@@ -28,75 +26,53 @@ function AppContent() {
       </div>
     );
   }
+  if (!user) return <Navigate to="/account-type" replace />;
+  if (role && user.role !== role) return <Navigate to="/account-type" replace />;
+  if (role === 'tenant' && !tenantData) return <Navigate to="/tenant" replace />;
+  return <>{children}</>;
+}
 
-  // If user is authenticated, show dashboard
-  if (user) {
-    return <EnhancedDashboardLayout />;
-  }
-
-  const handleScreenChange = (screen: Screen) => {
-    setCurrentScreen(screen);
-  };
-
-  const renderCurrentScreen = () => {
-    switch (currentScreen) {
-      case 'welcome':
-        return (
-          <WelcomeScreen
-            selectedFlat={selectedFlat}
-            onFlatChange={setSelectedFlat}
-            onNext={() => handleScreenChange('passcode')}
-          />
-        );
-      case 'passcode':
-        return (
-          <PasscodeScreen
-            onNext={() => handleScreenChange('accountType')}
-            onBack={() => handleScreenChange('welcome')}
-          />
-        );
-      case 'accountType':
-        return (
-          <AccountTypeScreen
-            onNext={() => handleScreenChange('login')}
-            onBack={() => handleScreenChange('passcode')}
-          />
-        );
-      case 'login':
-        return (
-          <LoginScreen
-            onSuccess={() => handleScreenChange('dashboard')}
-          />
-        );
-      default:
-        return (
-          <WelcomeScreen
-            selectedFlat={selectedFlat}
-            onFlatChange={setSelectedFlat}
-            onNext={() => handleScreenChange('passcode')}
-          />
-        );
-    }
-  };
+function AppRoutes() {
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {renderCurrentScreen()}
-      
-      {showSignupModal && (
-        <SignupModal
-          onClose={() => setShowSignupModal(false)}
-          selectedFlat={selectedFlat}
-        />
-      )}
-    </div>
+    <Routes>
+      <Route path="/" element={<Navigate to="/account-type" replace />} />
+      <Route path="/account-type" element={<AccountTypeScreen onNext={(type) => {
+        if (type === 'tenant') navigate('/tenant');
+        else if (type === 'invitation') navigate('/invitation');
+        else navigate('/login');
+      }} onBack={() => {}} />} />
+      <Route path="/login" element={<LoginScreen onSuccess={() => {}} />} />
+      <Route path="/tenant" element={<TenantWelcomeScreen onNext={() => navigate('/tenant/passcode')} />} />
+      <Route path="/tenant/passcode" element={<TenantPasscodeScreen onNext={() => {}} onBack={() => navigate('/tenant')} />} />
+      <Route path="/invitation" element={<InvitationLinkScreen onNext={() => {}} />} />
+      <Route path="/tenant/dashboard" element={
+        <RequireAuth role="tenant">
+          <TenantDashboard />
+        </RequireAuth>
+      } />
+      <Route path="/view-only" element={
+        <RequireAuth role="view_only_landlord">
+          <ViewOnlyDashboard />
+        </RequireAuth>
+      } />
+      <Route path="/dashboard/*" element={
+        <RequireAuth>
+          <EnhancedDashboardLayout />
+        </RequireAuth>
+      } />
+      <Route path="*" element={<Navigate to="/account-type" replace />} />
+    </Routes>
   );
 }
 
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <AppRoutes />
+      </Router>
     </AuthProvider>
   );
 }

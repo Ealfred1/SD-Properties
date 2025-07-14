@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import HeroSection from './HeroSection';
+import { useNavigate } from 'react-router-dom';
 
 interface TenantPasscodeScreenProps {
   onNext: () => void;
@@ -11,6 +12,7 @@ const TenantPasscodeScreen: React.FC<TenantPasscodeScreenProps> = ({ onNext, onB
   const { tenantLogin, isLoading } = useAuth();
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +23,7 @@ const TenantPasscodeScreen: React.FC<TenantPasscodeScreenProps> = ({ onNext, onB
       const success = await tenantLogin('TENANT001', passcode.trim());
       if (success) {
         console.log('Tenant login successful');
-        onNext();
+        navigate('/tenant/dashboard');
       } else {
         console.log('Tenant login failed');
         setError('Invalid passcode. Please try again.');

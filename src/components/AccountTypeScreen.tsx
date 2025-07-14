@@ -3,23 +3,31 @@ import { ChevronRight } from 'lucide-react';
 import HeroSection from './HeroSection';
 
 interface AccountTypeScreenProps {
-  onNext: () => void;
+  onNext: (accountType: string) => void;
   onBack: () => void;
 }
 
 const AccountTypeScreen: React.FC<AccountTypeScreenProps> = ({ onNext, onBack }) => {
   const accountTypes = [
     {
+      id: 'multi',
       title: 'For multi properties',
       description: 'Search from thousands of royalty-free',
     },
     {
+      id: 'single',
       title: 'For a single property',
       description: 'Search from thousands of royalty-free',
     },
     {
+      id: 'invitation',
       title: 'Invited by a user',
       description: 'Search from thousands of royalty-free',
+    },
+    {
+      id: 'tenant',
+      title: 'Tenant Access',
+      description: 'Direct access with tenant ID',
     },
   ];
 
@@ -30,7 +38,7 @@ const AccountTypeScreen: React.FC<AccountTypeScreenProps> = ({ onNext, onBack })
         <div className="w-full max-w-md space-y-6 sm:space-y-8">
           <div className="text-center lg:text-left">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              Chose a type of account
+              Choose a type of account
             </h1>
             <p className="text-gray-600 text-sm sm:text-base">
               To access our platform please login first
@@ -41,7 +49,7 @@ const AccountTypeScreen: React.FC<AccountTypeScreenProps> = ({ onNext, onBack })
             {accountTypes.map((type, index) => (
               <button
                 key={index}
-                onClick={onNext}
+                onClick={() => onNext(type.id)}
                 className="w-full p-4 sm:p-6 bg-white border border-gray-200 rounded-lg hover:border-yellow-500 hover:shadow-md transition-all duration-200 text-left group"
               >
                 <div className="flex items-center justify-between">

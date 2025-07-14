@@ -16,6 +16,9 @@ The Saint Davies Property Management Platform is a modern web application design
 - **Hotel Booking System**: Integrated short-term rental management
 - **User Management**: Invite and manage users with role-based permissions
 - **Analytics Dashboard**: Comprehensive overview of property performance
+- **Car Hire System**: Vehicle rental management and booking
+- **Tenant Portal**: Simplified access for tenants with unique ID/passcode
+- **View-Only Access**: Invitation-based access for external stakeholders
 
 ### Technical Features
 - **Role-Based Access Control (RBAC)**: Secure permission system
@@ -72,6 +75,8 @@ The Saint Davies Property Management Platform is a modern web application design
 ### 4. Tenant
 **Email**: `tenant@saintdavies.com`
 **Password**: `password123`
+**Tenant ID**: `TENANT001`
+**Passcode**: `1234`
 
 **Permissions**:
 - ✅ View own property information
@@ -83,6 +88,15 @@ The Saint Davies Property Management Platform is a modern web application design
 ### 5. Admin (System Administrator)
 **Permissions**: Same as Landlord plus system-wide administrative access
 
+### 6. View-Only Landlord
+**Invitation Token**: `VIEW_ONLY_TOKEN_123`
+
+**Permissions**:
+- ✅ View all properties (read-only)
+- ✅ Download documents and agreements
+- ✅ View tenant information and maintenance history
+- ❌ Cannot edit, create, or delete anything
+- ❌ No management capabilities
 ## 🛠️ Technology Stack
 
 - **Frontend**: React 18 with TypeScript
@@ -171,6 +185,16 @@ Use these credentials to explore different user roles:
 4. **Login Screen**: Enter credentials
 5. **Dashboard**: Role-based dashboard access
 
+### Tenant Access Flow (Simplified)
+1. **Tenant Welcome**: Enter tenant ID
+2. **Tenant Passcode**: Enter flat-specific passcode
+3. **Tenant Dashboard**: Direct access to personal property information
+
+### View-Only Access Flow
+1. **Account Type**: Select "Invited by a user"
+2. **Invitation Link**: Enter invitation token
+3. **View-Only Dashboard**: Browse properties without management capabilities
+
 ### Dashboard Navigation
 - **Sidebar Navigation**: Role-based menu items
 - **Mobile Navigation**: Collapsible menu for mobile devices
@@ -216,6 +240,21 @@ src/
 #### User Management
 - `UserManagementPage.tsx` - User invitation and management
 - `SignupModal.tsx` - User registration modal
+
+#### Hotel & Car Systems
+- `HotelBookingSystem.tsx` - Hotel booking and room management
+- `CarHireSystem.tsx` - Car rental and vehicle management
+
+#### Tenant Portal
+- `TenantWelcomeScreen.tsx` - Tenant ID entry
+- `TenantPasscodeScreen.tsx` - Passcode verification
+- `TenantDashboard.tsx` - Simplified tenant dashboard
+- `MaintenanceRequestModal.tsx` - Maintenance request submission
+
+#### View-Only Access
+- `InvitationLinkScreen.tsx` - Invitation token entry
+- `ViewOnlyDashboard.tsx` - Read-only property overview
+- `ViewOnlyPropertyDetail.tsx` - Detailed property view
 
 ## 🔐 Security Features
 
@@ -279,16 +318,50 @@ src/
 - Lease document access
 - Communication with property management
 
+### Hotel Booking System
+- Room creation and management
+- Booking process with payment integration
+- Multiple payment methods (card/transfer)
+- Receipt generation with QR codes
+- Room categorization (Standard, Deluxe, Superior)
+
+### Car Hire System
+- Vehicle upload and management
+- Car details with specifications
+- Agent contact information
+- Document and video uploads
+- Rental rate management
+
+### Tenant Portal Features
+- **Simplified Access**: No email/password required
+- **Unique ID System**: Tenant ID + passcode authentication
+- **Personal Dashboard**: Property-specific information only
+- **Maintenance Requests**: Submit with photo attachments
+- **Document Downloads**: Access agreements and receipts
+- **Secure Access**: Restricted to assigned property only
+
+### View-Only Access Features
+- **Invitation-Based**: Secure token-based access
+- **Read-Only Mode**: Cannot modify any data
+- **Property Overview**: View all properties and details
+- **Document Access**: Download agreements and receipts
+- **Maintenance History**: View all maintenance records
+
 ## 🔄 API Integration (Future Enhancement)
 
 The application is designed to easily integrate with backend APIs:
 
 ### Planned Endpoints
 - `POST /auth/login` - User authentication
+- `POST /auth/tenant` - Tenant authentication
+- `POST /auth/invitation` - Invitation-based authentication
 - `GET /properties` - Fetch user properties
 - `GET /tenants` - Fetch tenant information
 - `POST /maintenance` - Create maintenance requests
 - `GET /financials` - Fetch financial data
+- `POST /hotel/booking` - Hotel booking creation
+- `POST /car/rental` - Car rental booking
+- `GET /documents/{id}` - Secure document download
 
 ### Data Models
 - User model with role and permissions
@@ -296,17 +369,26 @@ The application is designed to easily integrate with backend APIs:
 - Tenant model with lease information
 - Maintenance model with request tracking
 - Financial model with payment records
+- Hotel booking model with payment details
+- Car rental model with vehicle specifications
+- Invitation model with access tokens
 
 ## 🧪 Testing
 
 ### Manual Testing Checklist
 - [ ] Login with different user roles
+- [ ] Test tenant access with ID/passcode
+- [ ] Test view-only access with invitation token
 - [ ] Navigate through role-specific menus
 - [ ] Test responsive design on mobile devices
 - [ ] Verify permission-based content access
 - [ ] Test form submissions and validations
 - [ ] Check modal functionality
 - [ ] Verify logout functionality
+- [ ] Test hotel booking process
+- [ ] Test car hire system
+- [ ] Test maintenance request submission
+- [ ] Test document downloads
 
 ### Browser Compatibility
 - ✅ Chrome (latest)

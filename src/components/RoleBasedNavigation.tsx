@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Building, Settings, LogOut, Users, CreditCard, Wrench, UserPlus, BarChart3 } from 'lucide-react';
+import { Home, Building, Settings, LogOut, Users, CreditCard, Wrench, UserPlus, BarChart3, Hotel, Car } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface RoleBasedNavigationProps {
@@ -57,6 +57,18 @@ const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ activeTab, on
       id: 'bookings', 
       label: 'Hotel Bookings', 
       icon: Settings, 
+      permission: 'view_dashboard' as const
+    },
+    { 
+      id: 'hotel', 
+      label: 'Book Hotel', 
+      icon: Hotel, 
+      permission: 'view_dashboard' as const
+    },
+    { 
+      id: 'car-hire', 
+      label: 'Hire a Car', 
+      icon: Car, 
       permission: 'view_dashboard' as const
     }
   ];

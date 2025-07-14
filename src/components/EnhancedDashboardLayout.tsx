@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Menu, X } from 'lucide-react';
+import { ChevronDown, Menu, X, Share2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import RoleBasedNavigation from './RoleBasedNavigation';
 import DashboardOverview from './DashboardOverview';
@@ -10,11 +10,15 @@ import TenantDetailPage from './TenantDetailPage';
 import HotelBookingPage from './HotelBookingPage';
 import UserManagementPage from './UserManagementPage';
 import DashboardHeader from './DashboardHeader';
+import ShareLinkModal from './ShareLinkModal';
 import ProtectedRoute from './ProtectedRoute';
+import HotelBookingSystem from './HotelBookingSystem';
+import CarHireSystem from './CarHireSystem';
 
 const EnhancedDashboardLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const { user, logout, hasPermission } = useAuth();
 
   const handleTabChange = (tab: string) => {
@@ -62,6 +66,18 @@ const EnhancedDashboardLayout: React.FC = () => {
         return <HotelBookingPage />;
       case 'users':
         return <UserManagementPage />;
+      case 'hotel':
+        return (
+          <ProtectedRoute requiredPermission="view_dashboard">
+            <HotelBookingSystem />
+          </ProtectedRoute>
+        );
+      case 'car-hire':
+        return (
+          <ProtectedRoute requiredPermission="view_dashboard">
+            <CarHireSystem />
+          </ProtectedRoute>
+        );
       default:
         return (
           <ProtectedRoute requiredPermission="view_dashboard">
@@ -95,7 +111,18 @@ const EnhancedDashboardLayout: React.FC = () => {
               {hasPermission('view_properties') && (
                 <a href="#" className="text-gray-700 hover:text-green-500 transition-colors text-sm">Properties</a>
               )}
-              <a href="#" className="text-gray-700 hover:text-green-500 transition-colors text-sm">Short-let</a>
+              <button 
+                onClick={() => setActiveTab('hotel')}
+                className="text-gray-700 hover:text-green-500 transition-colors text-sm"
+              >
+                Book hotel
+              </button>
+              <button 
+                onClick={() => setActiveTab('car-hire')}
+                className="text-gray-700 hover:text-green-500 transition-colors text-sm"
+              >
+                Hire a car
+              </button>
               <a href="#" className="text-gray-700 hover:text-green-500 transition-colors text-sm">Request</a>
               <a href="#" className="text-gray-700 hover:text-green-500 transition-colors text-sm">Overseas</a>
               <a href="#" className="text-gray-700 hover:text-green-500 transition-colors text-sm">Contact</a>
@@ -104,6 +131,17 @@ const EnhancedDashboardLayout: React.FC = () => {
 
             {/* Right Side */}
             <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Share Link Button for Landlords */}
+              {hasPermission('manage_property_access') && (
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="hidden sm:flex items-center space-x-1 text-gray-700 hover:text-green-500 transition-colors text-sm"
+                >
+                  <Share2 className="h-4 w-4" />
+                  <span>Share</span>
+                </button>
+              )}
+              
               <div className="hidden lg:flex items-center space-x-2">
                 <span className="text-gray-700 text-sm capitalize truncate max-w-24">
                   {user?.role?.replace('_', ' ')}
@@ -137,12 +175,31 @@ const EnhancedDashboardLayout: React.FC = () => {
               {hasPermission('view_properties') && (
                 <a href="#" className="block py-2 text-gray-700 hover:text-green-500 transition-colors text-sm">Properties</a>
               )}
-              <a href="#" className="block py-2 text-gray-700 hover:text-green-500 transition-colors text-sm">Short-let apartment</a>
+              <button 
+                onClick={() => setActiveTab('hotel')}
+                className="block py-2 text-gray-700 hover:text-green-500 transition-colors text-sm w-full text-left"
+              >
+                Book hotel
+              </button>
+              <button 
+                onClick={() => setActiveTab('car-hire')}
+                className="block py-2 text-gray-700 hover:text-green-500 transition-colors text-sm w-full text-left"
+              >
+                Hire a car
+              </button>
               <a href="#" className="block py-2 text-gray-700 hover:text-green-500 transition-colors text-sm">Request</a>
               <a href="#" className="block py-2 text-gray-700 hover:text-green-500 transition-colors text-sm">Overseas</a>
               <a href="#" className="block py-2 text-gray-700 hover:text-green-500 transition-colors text-sm">Contact us</a>
               <a href="#" className="block py-2 text-gray-700 hover:text-green-500 transition-colors text-sm">About us</a>
               <div className="border-t pt-2 mt-2">
+                {hasPermission('manage_property_access') && (
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="block py-2 text-gray-700 hover:text-green-500 transition-colors w-full text-left text-sm"
+                  >
+                    Share Property Link
+                  </button>
+                )}
                 <div className="py-2 text-gray-600 text-sm capitalize">
                   Logged in as: {user?.role?.replace('_', ' ')}
                 </div>
@@ -234,7 +291,23 @@ const EnhancedDashboardLayout: React.FC = () => {
                     activeTab === 'bookings' ? 'bg-green-100 text-green-700' : 'text-gray-600'
                   }`}
                 >
+                  Bookings
+                </button>
+                <button
+                  onClick={() => setActiveTab('hotel')}
+                  className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm ${
+                    activeTab === 'hotel' ? 'bg-green-100 text-green-700' : 'text-gray-600'
+                  }`}
+                >
                   Hotel
+                </button>
+                <button
+                  onClick={() => setActiveTab('car-hire')}
+                  className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm ${
+                    activeTab === 'car-hire' ? 'bg-green-100 text-green-700' : 'text-gray-600'
+                  }`}
+                >
+                  Car Hire
                 </button>
               </div>
             </div>
@@ -244,6 +317,14 @@ const EnhancedDashboardLayout: React.FC = () => {
           {renderContent()}
         </div>
       </div>
+
+      {/* Share Link Modal */}
+      {showShareModal && (
+        <ShareLinkModal
+          onClose={() => setShowShareModal(false)}
+          propertyName="Flat 1"
+        />
+      )}
     </div>
   );
 };

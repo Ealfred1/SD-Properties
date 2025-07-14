@@ -5,11 +5,13 @@ export interface User {
   role: UserRole;
   permissions: Permission[];
   properties?: string[]; // Property IDs user has access to
+  tenantId?: string; // For tenant-specific access
+  invitationToken?: string; // For invitation-based access
   createdAt: string;
   lastLogin?: string;
 }
 
-export type UserRole = 'landlord' | 'agent' | 'tenant' | 'property_manager' | 'admin';
+export type UserRole = 'landlord' | 'agent' | 'tenant' | 'property_manager' | 'admin' | 'view_only_landlord';
 
 export type Permission = 
   // Property permissions
@@ -47,7 +49,13 @@ export type Permission =
   // Dashboard access
   | 'view_dashboard'
   | 'view_analytics'
-  | 'export_data';
+  | 'export_data'
+  
+  // Tenant-specific permissions
+  | 'view_own_property'
+  | 'request_maintenance'
+  | 'download_documents'
+  | 'send_messages';
 
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   landlord: [
@@ -74,9 +82,17 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'view_dashboard'
   ],
   tenant: [
-    'view_properties',
-    'view_maintenance', 'create_maintenance',
+    'view_own_property',
+    'view_maintenance', 'request_maintenance',
+    'download_documents', 'send_messages',
     'view_dashboard'
+  ],
+  view_only_landlord: [
+    'view_properties',
+    'view_tenants', 'view_tenant_documents',
+    'view_financials', 'view_payments',
+    'view_maintenance',
+    'view_dashboard', 'download_documents'
   ],
   admin: [
     'view_properties', 'create_properties', 'edit_properties', 'delete_properties', 'manage_property_access',
@@ -87,3 +103,64 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'view_dashboard', 'view_analytics', 'export_data'
   ]
 };
+
+export interface TenantData {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  flatNumber: string;
+  rentAmount: number;
+  expiryDate: string;
+  lastPaymentDate: string;
+  propertyDetails: {
+    bedrooms: number;
+    bathrooms: number;
+    description: string;
+    image: string;
+    address?: string;
+    floor?: string;
+  };
+  maintenanceHistory: MaintenanceRecord[];
+  paymentHistory: PaymentRecord[];
+  documents: Document[];
+  rentStartDate: string;
+  rentExpiryDate: string;
+  agentName?: string;
+  agentPhone?: string;
+  maintenance?: { title: string; date: string }[];
+}
+
+export interface MaintenanceRecord {
+  id: string;
+  detail: string;
+  amount: number;
+  date: string;
+  status: 'completed' | 'pending' | 'in_progress';
+  receipt?: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  detail: string;
+  amount: number;
+  date: string;
+  receipt: string;
+}
+
+export interface Document {
+  id: string;
+  name: string;
+  type: 'tenancy_agreement' | 'rent_receipt' | 'maintenance_record';
+  url: string;
+  date: string;
+}
+
+export interface PropertyShareLink {
+  id: string;
+  propertyId: string;
+  token: string;
+  expiresAt: string;
+  createdBy: string;
+  accessType: 'view_only' | 'tenant_access';
+}

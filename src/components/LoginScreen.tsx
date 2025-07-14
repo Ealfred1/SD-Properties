@@ -20,10 +20,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
     e.preventDefault();
     setError('');
     
+    console.log('Attempting login with:', formData.email);
+    
     const success = await login(formData.email, formData.password);
     if (success) {
+      console.log('Login successful');
       onSuccess();
     } else {
+      console.log('Login failed');
       setError('Invalid email or password');
     }
   };
@@ -33,6 +37,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
       ...formData,
       [e.target.name]: e.target.value
     });
+  };
+
+  const handleDemoLogin = (email: string) => {
+    setFormData({ email, password: 'password123' });
   };
 
   const demoAccounts = [
@@ -119,7 +127,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
               {demoAccounts.map((account, index) => (
                 <button
                   key={index}
-                  onClick={() => setFormData({ email: account.email, password: 'password123' })}
+                  onClick={() => handleDemoLogin(account.email)}
                   className="w-full text-left p-2 hover:bg-blue-100 rounded text-xs transition-colors"
                 >
                   <div className="font-medium text-blue-900">{account.role}</div>
