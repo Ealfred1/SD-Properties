@@ -19,7 +19,21 @@ const EnhancedDashboardLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showAddMaintenanceModal, setShowAddMaintenanceModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
   const { user, logout, hasPermission } = useAuth();
+
+  // Handler to select a property and go to detail view
+  const handleSelectProperty = (property) => {
+    setSelectedProperty(property);
+    setActiveTab('property-detail');
+  };
+
+  // Handler to go back to properties list
+  const handleBackToProperties = () => {
+    setSelectedProperty(null);
+    setActiveTab('properties');
+  };
 
   const handleTabChange = (tab: string) => {
     if (tab === 'logout') {
@@ -35,25 +49,30 @@ const EnhancedDashboardLayout: React.FC = () => {
       case 'dashboard':
         return (
           <ProtectedRoute requiredPermission="view_dashboard">
-            <DashboardOverview />
+            <DashboardOverview onSelectProperty={handleSelectProperty} />
           </ProtectedRoute>
         );
       case 'properties':
         return (
           <ProtectedRoute requiredPermission="view_properties">
-            <PropertiesPage />
+            <PropertiesPage onSelectProperty={handleSelectProperty} />
           </ProtectedRoute>
         );
       case 'property-detail':
         return (
           <ProtectedRoute requiredPermission="view_properties">
-            <PropertyDetailPage />
+            <PropertyDetailPage
+              property={selectedProperty}
+              onBack={handleBackToProperties}
+              onShare={() => setShowShareModal(true)}
+              onAddMaintenance={() => setShowAddMaintenanceModal(true)}
+            />
           </ProtectedRoute>
         );
       case 'maintenance':
         return (
           <ProtectedRoute requiredPermission="view_maintenance">
-            <MaintenancePage />
+            <MaintenancePage onSelectProperty={handleSelectProperty} />
           </ProtectedRoute>
         );
       case 'tenants':
@@ -81,7 +100,7 @@ const EnhancedDashboardLayout: React.FC = () => {
       default:
         return (
           <ProtectedRoute requiredPermission="view_dashboard">
-            <DashboardOverview />
+            <DashboardOverview onSelectProperty={handleSelectProperty} />
           </ProtectedRoute>
         );
     }
@@ -319,11 +338,21 @@ const EnhancedDashboardLayout: React.FC = () => {
       </div>
 
       {/* Share Link Modal */}
-      {showShareModal && (
+      {showShareModal && selectedProperty && (
         <ShareLinkModal
+          propertyName={selectedProperty.name}
           onClose={() => setShowShareModal(false)}
-          propertyName="Flat 1"
         />
+      )}
+      {/* Add Maintenance Modal (stub, replace with your modal) */}
+      {showAddMaintenanceModal && selectedProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <h2 className="text-lg font-bold mb-4">Add Maintenance (Demo)</h2>
+            <p>Maintenance modal for {selectedProperty.name}</p>
+            <button className="mt-6 bg-green-500 text-white px-4 py-2 rounded" onClick={() => setShowAddMaintenanceModal(false)}>Close</button>
+          </div>
+        </div>
       )}
     </div>
   );

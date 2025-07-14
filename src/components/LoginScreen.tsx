@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import HeroSection from './HeroSection';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginScreenProps {
-  onSuccess: () => void;
+  loginType?: string;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({ loginType }) => {
   const { login, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -15,19 +16,19 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onSuccess }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    console.log('Attempting login with:', formData.email);
-    
     const success = await login(formData.email, formData.password);
     if (success) {
-      console.log('Login successful');
-      onSuccess();
+      if (loginType === 'multi-property') {
+        navigate('/multi-property-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
-      console.log('Login failed');
       setError('Invalid email or password');
     }
   };

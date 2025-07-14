@@ -1,6 +1,6 @@
 import React from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import WelcomeScreen from './components/WelcomeScreen';
 import PasscodeScreen from './components/PasscodeScreen';
 import AccountTypeScreen from './components/AccountTypeScreen';
@@ -11,6 +11,7 @@ import InvitationLinkScreen from './components/InvitationLinkScreen';
 import EnhancedDashboardLayout from './components/EnhancedDashboardLayout';
 import TenantDashboard from './components/TenantDashboard';
 import ViewOnlyDashboard from './components/ViewOnlyDashboard';
+import MultiPropertyDashboard from './components/MultiPropertyDashboard';
 
 function RequireAuth({ children, role }: { children: React.ReactNode; role?: string }) {
   const { user, tenantData, isLoading } = useAuth();
@@ -34,16 +35,25 @@ function RequireAuth({ children, role }: { children: React.ReactNode; role?: str
 
 function AppRoutes() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const loginType = params.get('type');
 
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/account-type" replace />} />
       <Route path="/account-type" element={<AccountTypeScreen onNext={(type) => {
-        if (type === 'tenant') navigate('/tenant');
-        else if (type === 'invitation') navigate('/invitation');
-        else navigate('/login');
+        if (type === 'multi') {
+          navigate('/login?type=multi-property');
+        } else if (type === 'tenant') {
+          navigate('/tenant');
+        } else if (type === 'invitation') {
+          navigate('/invitation');
+        } else {
+          navigate('/login');
+        }
       }} onBack={() => {}} />} />
-      <Route path="/login" element={<LoginScreen onSuccess={() => {}} />} />
+      <Route path="/login" element={<LoginScreen loginType={loginType ?? undefined} />} />
       <Route path="/tenant" element={<TenantWelcomeScreen onNext={() => navigate('/tenant/passcode')} />} />
       <Route path="/tenant/passcode" element={<TenantPasscodeScreen onNext={() => {}} onBack={() => navigate('/tenant')} />} />
       <Route path="/invitation" element={<InvitationLinkScreen onNext={() => {}} />} />
@@ -55,6 +65,11 @@ function AppRoutes() {
       <Route path="/view-only" element={
         <RequireAuth role="view_only_landlord">
           <ViewOnlyDashboard />
+        </RequireAuth>
+      } />
+      <Route path="/multi-property-dashboard" element={
+        <RequireAuth>
+          <MultiPropertyDashboard />
         </RequireAuth>
       } />
       <Route path="/dashboard/*" element={
