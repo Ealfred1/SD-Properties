@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Copy, Share2, Link } from 'lucide-react';
+import { X, Copy, Share2 } from 'lucide-react';
 
 interface ShareLinkModalProps {
   onClose: () => void;

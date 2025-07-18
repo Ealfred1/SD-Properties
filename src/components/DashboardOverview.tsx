@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, Building, Users, DollarSign, ChevronRight } from 'lucide-react';
+import { TrendingUp, Building, Users, DollarSign } from 'lucide-react';
 
 const DashboardOverview: React.FC = () => {
   const stats = [

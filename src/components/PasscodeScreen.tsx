@@ -3,10 +3,9 @@ import HeroSection from './HeroSection';
 
 interface PasscodeScreenProps {
   onNext: () => void;
-  onBack: () => void;
 }
 
-const PasscodeScreen: React.FC<PasscodeScreenProps> = ({ onNext, onBack }) => {
+const PasscodeScreen: React.FC<PasscodeScreenProps> = ({ onNext }) => {
   const [passcode, setPasscode] = useState('');
 
   return (

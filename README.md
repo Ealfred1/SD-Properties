@@ -146,7 +146,7 @@ npm run dev
 ```
 
 4. **Open your browser**
-Navigate to `http://localhost:5173`
+Navigate to `chttp://localhost:5173`
 
 ### Build for Production
 ```bash

@@ -3,10 +3,9 @@ import { X, Upload, Check } from 'lucide-react';
 
 interface PaymentModalProps {
   onClose: () => void;
-  onBack: () => void;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ onClose, onBack }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState('');
   const [formData, setFormData] = useState({
@@ -207,45 +206,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ onClose, onBack }) => {
         className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
       >
         Pay
-      </button>
-    </div>
-  );
-
-  const renderCreateRoom = () => (
-    <div className="p-4 sm:p-6 space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold">Create a room</h3>
-        <span className="text-sm text-gray-500">1/2</span>
-      </div>
-
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Room name"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        />
-
-        <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent">
-          <option>Room Categories</option>
-          <option>Deluxe</option>
-          <option>Superior</option>
-        </select>
-
-        <input
-          type="text"
-          placeholder="Price"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-        />
-
-        <textarea
-          placeholder="Room description"
-          rows={4}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-        />
-      </div>
-
-      <button className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
-        Next
       </button>
     </div>
   );

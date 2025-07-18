@@ -6,7 +6,7 @@ import DashboardOverview from './DashboardOverview';
 import PropertiesPage from './PropertiesPage';
 import PropertyDetailPage from './PropertyDetailPage';
 import MaintenancePage from './MaintenancePage';
-import TenantDetailPage from './TenantDetailPage';
+import TenantManagerPage from './TenantManagerPage';
 import HotelBookingPage from './HotelBookingPage';
 import UserManagementPage from './UserManagementPage';
 import DashboardHeader from './DashboardHeader';
@@ -15,16 +15,32 @@ import ProtectedRoute from './ProtectedRoute';
 import HotelBookingSystem from './HotelBookingSystem';
 import CarHireSystem from './CarHireSystem';
 
+// Add Property type
+interface Property {
+  id: number;
+  title: string;
+  address: string;
+  city: string;
+  state: string;
+  price: string;
+  is_available: boolean;
+  image?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  description?: string;
+  [key: string]: any;
+}
+
 const EnhancedDashboardLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showAddMaintenanceModal, setShowAddMaintenanceModal] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const { user, logout, hasPermission } = useAuth();
 
   // Handler to select a property and go to detail view
-  const handleSelectProperty = (property) => {
+  const handleSelectProperty = (property: Property) => {
     setSelectedProperty(property);
     setActiveTab('property-detail');
   };
@@ -64,8 +80,10 @@ const EnhancedDashboardLayout: React.FC = () => {
             <PropertyDetailPage
               property={selectedProperty}
               onBack={handleBackToProperties}
-              onShare={() => setShowShareModal(true)}
-              onAddMaintenance={() => setShowAddMaintenanceModal(true)}
+              onUpdate={() => {}}
+              onDelete={() => {}}
+              onRequestMaintenance={() => {}}
+              onUploadImages={() => {}}
             />
           </ProtectedRoute>
         );
@@ -78,7 +96,7 @@ const EnhancedDashboardLayout: React.FC = () => {
       case 'tenants':
         return (
           <ProtectedRoute requiredPermission="view_tenants">
-            <TenantDetailPage />
+            <TenantManagerPage />
           </ProtectedRoute>
         );
       case 'bookings':
@@ -340,7 +358,7 @@ const EnhancedDashboardLayout: React.FC = () => {
       {/* Share Link Modal */}
       {showShareModal && selectedProperty && (
         <ShareLinkModal
-          propertyName={selectedProperty.name}
+          propertyName={selectedProperty.title}
           onClose={() => setShowShareModal(false)}
         />
       )}
@@ -349,7 +367,7 @@ const EnhancedDashboardLayout: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full">
             <h2 className="text-lg font-bold mb-4">Add Maintenance (Demo)</h2>
-            <p>Maintenance modal for {selectedProperty.name}</p>
+            <p>Maintenance modal for {selectedProperty.title}</p>
             <button className="mt-6 bg-green-500 text-white px-4 py-2 rounded" onClick={() => setShowAddMaintenanceModal(false)}>Close</button>
           </div>
         </div>

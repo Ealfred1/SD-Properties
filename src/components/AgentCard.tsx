@@ -1,5 +1,4 @@
 import React from 'react';
-import { Phone } from 'lucide-react';
 
 interface AgentCardProps {
   onRequestMaintenance: () => void;

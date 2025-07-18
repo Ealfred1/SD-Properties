@@ -3,11 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import HeroSection from './HeroSection';
 import { useNavigate } from 'react-router-dom';
 
-interface InvitationLinkScreenProps {
-  onNext: () => void;
-}
-
-const InvitationLinkScreen: React.FC<InvitationLinkScreenProps> = ({ onNext }) => {
+const InvitationLinkScreen: React.FC = () => {
   const { invitationLogin, isLoading } = useAuth();
   const [invitationLink, setInvitationLink] = useState('');
   const [error, setError] = useState('');

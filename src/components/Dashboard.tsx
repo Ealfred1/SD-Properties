@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Home, Building, Users, MessageSquare, FileText, Settings, ChevronDown, Download, Calendar, User, Phone, LogOut, Menu, X } from 'lucide-react';
 import DashboardHeader from './DashboardHeader';
 import PropertyDetails from './PropertyDetails';
 import AgentCard from './AgentCard';

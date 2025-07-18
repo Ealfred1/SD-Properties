@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, UserRole, Permission, ROLE_PERMISSIONS, TenantData } from '../types/auth';
+import { User, Permission, ROLE_PERMISSIONS, TenantData } from '../types/auth';
+import { apiRequest } from '../utils/api';
 
 interface AuthContextType {
   user: User | null;
@@ -128,8 +129,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        console.log('Restored user from localStorage:', parsedUser);
-        setUser(parsedUser);
+        // Normalize user if it's from API format
+        const normalizedUser = parsedUser.attributes
+          ? {
+              id: parsedUser.id.toString(),
+              email: parsedUser.attributes.email,
+              name: parsedUser.attributes.name,
+              role: parsedUser.attributes.role,
+              permissions: ROLE_PERMISSIONS[parsedUser.attributes.role] || [],
+              properties: [],
+              createdAt: parsedUser.attributes.created_at,
+            }
+          : parsedUser;
+        setUser(normalizedUser);
       } catch (error) {
         console.error('Error parsing stored user:', error);
         localStorage.removeItem('user');
@@ -149,32 +161,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    console.log('Login attempt for:', email);
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const foundUser = MOCK_USERS.find(u => u.email === email);
-      console.log('Found user:', foundUser);
-      
-      if (foundUser && password === 'password123') {
-        const userWithLastLogin = {
-          ...foundUser,
-          lastLogin: new Date().toISOString()
-        };
-        console.log('Login successful, setting user:', userWithLastLogin);
-        setUser(userWithLastLogin);
-        localStorage.setItem('user', JSON.stringify(userWithLastLogin));
+      const res = await apiRequest('POST', '/auth/login', { email, password }, undefined, true);
+      const user = res.data.user;
+      const token = res.data.token;
+      if (user && user.attributes && user.attributes.role === 'manager') {
+        setUser({
+          id: user.id.toString(),
+          email: user.attributes.email,
+          name: user.attributes.name,
+          role: user.attributes.role,
+          permissions: ROLE_PERMISSIONS.property_manager,
+          properties: [],
+          createdAt: user.attributes.created_at,
+        });
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', token);
         setIsLoading(false);
         return true;
+      } else {
+        setIsLoading(false);
+        return false;
       }
-      
-      console.log('Login failed - invalid credentials');
-      setIsLoading(false);
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
+    } catch (err: any) {
+      // Check for unverified email error
+      if (err?.message && err.message.toLowerCase().includes('not verified')) {
+        localStorage.setItem('pendingVerification', email);
+        window.location.href = '/verify-email';
+      }
       setIsLoading(false);
       return false;
     }

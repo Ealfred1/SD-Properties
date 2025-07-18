@@ -1,8 +1,6 @@
 import React from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import WelcomeScreen from './components/WelcomeScreen';
-import PasscodeScreen from './components/PasscodeScreen';
 import AccountTypeScreen from './components/AccountTypeScreen';
 import LoginScreen from './components/LoginScreen';
 import TenantWelcomeScreen from './components/TenantWelcomeScreen';
@@ -12,6 +10,12 @@ import EnhancedDashboardLayout from './components/EnhancedDashboardLayout';
 import TenantDashboard from './components/TenantDashboard';
 import ViewOnlyDashboard from './components/ViewOnlyDashboard';
 import MultiPropertyDashboard from './components/MultiPropertyDashboard';
+import HotelBookingDashboard from './components/HotelBookingDashboard';
+import RegisterPage from './components/RegisterPage';
+import VerifyEmailPage from './components/VerifyEmailPage';
+import ResendVerificationPage from './components/ResendVerificationPage';
+import ForgotPasswordPage from './components/ForgotPasswordPage';
+import ResetPasswordPage from './components/ResetPasswordPage';
 
 function RequireAuth({ children, role }: { children: React.ReactNode; role?: string }) {
   const { user, tenantData, isLoading } = useAuth();
@@ -52,11 +56,16 @@ function AppRoutes() {
         } else {
           navigate('/login');
         }
-      }} onBack={() => {}} />} />
+      }} />} />
       <Route path="/login" element={<LoginScreen loginType={loginType ?? undefined} />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/resend-verification" element={<ResendVerificationPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/tenant" element={<TenantWelcomeScreen onNext={() => navigate('/tenant/passcode')} />} />
-      <Route path="/tenant/passcode" element={<TenantPasscodeScreen onNext={() => {}} onBack={() => navigate('/tenant')} />} />
-      <Route path="/invitation" element={<InvitationLinkScreen onNext={() => {}} />} />
+      <Route path="/tenant/passcode" element={<TenantPasscodeScreen />} />
+      <Route path="/invitation" element={<InvitationLinkScreen />} />
       <Route path="/tenant/dashboard" element={
         <RequireAuth role="tenant">
           <TenantDashboard />
@@ -70,6 +79,11 @@ function AppRoutes() {
       <Route path="/multi-property-dashboard" element={
         <RequireAuth>
           <MultiPropertyDashboard />
+        </RequireAuth>
+      } />
+      <Route path="/hotel-booking-dashboard" element={
+        <RequireAuth>
+          <HotelBookingDashboard />
         </RequireAuth>
       } />
       <Route path="/dashboard/*" element={

@@ -1,13 +1,33 @@
 import React, { useState } from 'react';
-import { Star, Calendar, Users, Phone, Upload, Check, X } from 'lucide-react';
+import { Star, Check, X } from 'lucide-react';
+// 1. Import QRCode for receipt
+import { QRCodeCanvas } from 'qrcode.react';
+
+interface Room {
+  name: string;
+  price: string;
+  image: string;
+  status: string;
+}
+
+interface Booking {
+  room: string;
+  checkIn: string;
+  checkOut: string;
+  guests: string;
+  phone: string;
+  additionalDetails: string;
+  paymentMethod: string;
+  receiptId: string;
+  date: string;
+}
 
 const HotelBookingSystem: React.FC = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCreateRoomModal, setShowCreateRoomModal] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-
-  const roomCategories = [
+  // 2. Add state for bookings and rooms at the top of HotelBookingSystem
+  const [rooms, setRooms] = useState<Room[]>([
     {
       name: 'Standard room',
       price: '40,000',
@@ -26,7 +46,9 @@ const HotelBookingSystem: React.FC = () => {
       image: 'https://images.pexels.com/photos/271643/pexels-photo-271643.jpeg?auto=compress&cs=tinysrgb&w=300&h=200&fit=crop',
       status: 'Book'
     }
-  ];
+  ]);
+  // 3. Update BookingModal to collect all info, then pass to PaymentModal
+  const [bookingData, setBookingData] = useState<Booking | null>(null);
 
   const BookingModal = () => {
     const [formData, setFormData] = useState({
@@ -35,10 +57,14 @@ const HotelBookingSystem: React.FC = () => {
       guests: '',
       phone: '',
       additionalDetails: '',
+      room: rooms[0]?.name || '',
     });
-
+    const [step, setStep] = useState(1);
+    const handleNext = () => setStep(step + 1);
+    const handleBack = () => setStep(step - 1);
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
+      setBookingData({ ...formData, paymentMethod: '', receiptId: '', date: new Date().toISOString() });
       setShowBookingModal(false);
       setShowPaymentModal(true);
     };
@@ -47,63 +73,40 @@ const HotelBookingSystem: React.FC = () => {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
           <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center">
-            <div>
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Book a hotel</h2>
-              <p className="text-xs sm:text-sm text-gray-600 mt-1">Fill in details below to book a hotel room</p>
-            </div>
             <button onClick={() => setShowBookingModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
               <X className="h-5 w-5 text-gray-500" />
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-            <input
-              type="date"
-              name="checkIn"
-              value={formData.checkIn}
-              onChange={(e) => setFormData({...formData, checkIn: e.target.value})}
-              placeholder="Check in"
+            {step === 1 && (
+              <>
+                <select
+                  name="room"
+                  value={formData.room}
+                  onChange={e => setFormData({ ...formData, room: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               required
-            />
-            <input
-              type="date"
-              name="checkOut"
-              value={formData.checkOut}
-              onChange={(e) => setFormData({...formData, checkOut: e.target.value})}
-              placeholder="Check out"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-            />
-            <input
-              type="number"
-              name="guests"
-              value={formData.guests}
-              onChange={(e) => setFormData({...formData, guests: e.target.value})}
-              placeholder="Number of Guests"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-            />
-            <input
-              type="tel"
-              name="phone"
-              value={formData.phone}
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              placeholder="Phone number"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              required
-            />
-            <textarea
-              name="additionalDetails"
-              value={formData.additionalDetails}
-              onChange={(e) => setFormData({...formData, additionalDetails: e.target.value})}
-              placeholder="Additional details (optional)"
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-            />
-            <button type="submit" className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
-              Pay
-            </button>
+                >
+                  {rooms.map((r, i) => <option key={i} value={r.name}>{r.name} - ₦{r.price}</option>)}
+                </select>
+                <input type="date" name="checkIn" value={formData.checkIn} onChange={e => setFormData({ ...formData, checkIn: e.target.value })} required className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <input type="date" name="checkOut" value={formData.checkOut} onChange={e => setFormData({ ...formData, checkOut: e.target.value })} required className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <button type="button" onClick={handleNext} className="w-full bg-green-500 text-white py-2 rounded">Next</button>
+              </>
+            )}
+            {step === 2 && (
+              <>
+                <input type="number" name="guests" value={formData.guests} onChange={e => setFormData({ ...formData, guests: e.target.value })} placeholder="Number of Guests" required className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <input type="tel" name="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="Phone number" required className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <textarea name="additionalDetails" value={formData.additionalDetails} onChange={e => setFormData({ ...formData, additionalDetails: e.target.value })} placeholder="Additional details (optional)" rows={3} className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <div className="flex justify-between">
+                  <button type="button" onClick={handleBack} className="bg-gray-200 text-gray-700 px-4 py-2 rounded">Back</button>
+                  <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Proceed to Payment</button>
+                </div>
+              </>
+            )}
           </form>
         </div>
       </div>
@@ -112,161 +115,70 @@ const HotelBookingSystem: React.FC = () => {
 
   const PaymentModal = () => {
     const [paymentMethod, setPaymentMethod] = useState('');
-
-    const renderStep1 = () => (
-      <div className="p-4 sm:p-6 space-y-4">
-        <div className="space-y-3">
-          <div
-            onClick={() => setPaymentMethod('card')}
-            className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
-              paymentMethod === 'card' ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-gray-400'
-            }`}
-          >
-            <span className="text-gray-700">Pay with card</span>
-            {paymentMethod === 'card' && <Check className="h-5 w-5 text-green-500" />}
-          </div>
-          <div
-            onClick={() => setPaymentMethod('transfer')}
-            className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
-              paymentMethod === 'transfer' ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-gray-400'
-            }`}
-          >
-            <span className="text-gray-700">Pay with transfer</span>
-            {paymentMethod === 'transfer' && <Check className="h-5 w-5 text-green-500" />}
-          </div>
-        </div>
-        <button
-          onClick={() => setCurrentStep(paymentMethod === 'transfer' ? 2 : 3)}
-          disabled={!paymentMethod}
-          className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-        >
-          Pay
-        </button>
-      </div>
-    );
-
-    const renderStep2 = () => (
-      <div className="p-4 sm:p-6 space-y-4">
-        <div className="text-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Account number</h3>
-          <p className="text-2xl font-bold text-gray-900 mb-2">03874920244</p>
-          <p className="text-gray-600 mb-4">Bank</p>
-          <p className="text-xl font-semibold text-gray-900">OPay</p>
-        </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center space-x-3">
-          <Upload className="h-5 w-5 text-yellow-600" />
-          <span className="text-gray-700">Upload proof of payment</span>
-        </div>
-        <button
-          onClick={() => setCurrentStep(4)}
-          className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-        >
-          Upload
-        </button>
-      </div>
-    );
-
-    const renderStep3 = () => (
-      <div className="p-4 sm:p-6 space-y-4">
-        <input
-          type="text"
-          placeholder="Card number"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-        <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-          <option value="">Card name</option>
-          <option value="visa">Visa</option>
-          <option value="mastercard">Mastercard</option>
-        </select>
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="9/2025"
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-          <input
-            type="text"
-            placeholder="Cvv"
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-          />
-        </div>
-        <button
-          onClick={() => setCurrentStep(4)}
-          className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-        >
-          Pay
-        </button>
-      </div>
-    );
-
-    const renderStep4 = () => (
-      <div className="p-4 sm:p-6 space-y-6">
-        <div className="text-center">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">Avelo hotel</h3>
-          <div className="space-y-3 text-left bg-gray-50 p-4 rounded-lg">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Check in date</span>
-              <span className="font-medium">May 20th, 2024</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Check out date</span>
-              <span className="font-medium">May 31st, 2024</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Number of room</span>
-              <span className="font-medium">1</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Phone number</span>
-              <span className="font-medium">08140423043</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Payment date</span>
-              <span className="font-medium">May 20th, 2024</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Transaction id</span>
-              <span className="font-medium">089654456786</span>
-            </div>
-            <div className="flex justify-between font-semibold">
-              <span className="text-gray-900">Payment amount</span>
-              <span className="text-gray-900">$200,000</span>
-            </div>
-          </div>
-          <div className="flex justify-center my-6">
-            <div className="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
-              <div className="text-xs text-gray-500">QR Code</div>
-            </div>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowPaymentModal(false)}
-          className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-        >
-          Done
-        </button>
-      </div>
-    );
-
+    const [step, setStep] = useState(1);
+    const [proof, setProof] = useState<File|null>(null);
+    const [cardInfo, setCardInfo] = useState({ number: '', name: '', expiry: '', cvv: '' });
+    const [paid, setPaid] = useState(false);
+    const [receiptId] = useState(() => Math.random().toString(36).substr(2, 9));
+    const handlePay = () => {
+      setPaid(true);
+      // Assuming bookingData is now Booking type
+      if (bookingData) {
+        // setBookings(prev => [...prev, { ...bookingData, paymentMethod, receiptId, date: new Date().toISOString() }]);
+      }
+    };
+    const handleProofUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) setProof(e.target.files[0]);
+    };
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
           <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center">
-            <div>
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-                {currentStep === 1 ? 'Select a payment option' : 
-                 currentStep === 4 ? 'Hotel receipt' : 'Book a hotel'}
-              </h2>
-              <p className="text-xs sm:text-sm text-gray-600 mt-1">Fill in details below to book a hotel room</p>
-            </div>
-            <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{step === 3 ? 'Hotel receipt' : 'Payment'}</h2>
+            <button onClick={() => setShowPaymentModal(false)} className="p-1 hover:bg-gray-100 rounded-full"><X className="h-5 w-5 text-gray-500" /></button>
           </div>
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && renderStep4()}
+          <div className="p-4 sm:p-6">
+            {step === 1 && (
+              <>
+                <div className="space-y-3">
+                  <div onClick={() => setPaymentMethod('card')} className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer ${paymentMethod === 'card' ? 'border-green-500 bg-green-50' : 'border-gray-300'}`}>Pay with card {paymentMethod === 'card' && <Check className="h-5 w-5 text-green-500" />}</div>
+                  <div onClick={() => setPaymentMethod('transfer')} className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer ${paymentMethod === 'transfer' ? 'border-green-500 bg-green-50' : 'border-gray-300'}`}>Pay with transfer {paymentMethod === 'transfer' && <Check className="h-5 w-5 text-green-500" />}</div>
+                </div>
+                <button onClick={() => setStep(paymentMethod === 'transfer' ? 2 : 3)} disabled={!paymentMethod} className="w-full bg-green-500 text-white py-2 rounded mt-4">Continue</button>
+              </>
+            )}
+            {step === 2 && paymentMethod === 'transfer' && (
+              <>
+                <div className="mb-4">
+                  <h3 className="font-semibold">Bank Transfer</h3>
+                  <p className="text-sm">Account: <span className="font-mono">03874920244</span> (OPay)</p>
+                </div>
+                <input type="file" accept="image/*" onChange={handleProofUpload} className="mb-2" />
+                {proof && <img src={URL.createObjectURL(proof)} alt="Proof" className="w-32 h-24 object-cover rounded mb-2" />}
+                <button onClick={() => { handlePay(); setStep(3); }} className="w-full bg-green-500 text-white py-2 rounded">Upload & Finish</button>
+              </>
+            )}
+            {step === 2 && paymentMethod === 'card' && (
+              <>
+                <input type="text" placeholder="Card number" value={cardInfo.number} onChange={e => setCardInfo({ ...cardInfo, number: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-2" />
+                <input type="text" placeholder="Card name" value={cardInfo.name} onChange={e => setCardInfo({ ...cardInfo, name: e.target.value })} className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-2" />
+                <div className="flex gap-2 mb-2">
+                  <input type="text" placeholder="MM/YY" value={cardInfo.expiry} onChange={e => setCardInfo({ ...cardInfo, expiry: e.target.value })} className="flex-1 px-4 py-3 border border-gray-300 rounded-lg" />
+                  <input type="text" placeholder="CVV" value={cardInfo.cvv} onChange={e => setCardInfo({ ...cardInfo, cvv: e.target.value })} className="flex-1 px-4 py-3 border border-gray-300 rounded-lg" />
+                </div>
+                <button onClick={() => { handlePay(); setStep(3); }} className="w-full bg-green-500 text-white py-2 rounded">Pay</button>
+              </>
+            )}
+            {step === 3 && paid && (
+              <div className="text-center">
+                <h3 className="font-semibold text-lg mb-2">Payment Successful!</h3>
+                <div className="mb-2">Receipt ID: <span className="font-mono text-xs">{receiptId}</span></div>
+                <QRCodeCanvas value={receiptId} size={128} className="mx-auto my-2" />
+                <div className="mt-2 text-sm">Show this QR code at check-in.</div>
+                <button onClick={() => setShowPaymentModal(false)} className="w-full bg-green-500 text-white py-2 rounded mt-4">Close</button>
+            </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -274,78 +186,52 @@ const HotelBookingSystem: React.FC = () => {
 
   const CreateRoomModal = () => {
     const [step, setStep] = useState(1);
-
+    const [form, setForm] = useState({ name: '', category: '', price: '', description: '', images: [] as File[], video: null as File|null });
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files) setForm(f => ({ ...f, images: [...f.images, ...Array.from(e.target.files)] }));
+    };
+    const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) setForm(f => ({ ...f, video: e.target.files![0] }));
+    };
+    const handleCreate = (e: React.FormEvent) => {
+      e.preventDefault();
+      setRooms(prev => [...prev, { name: form.name, price: form.price, image: form.images[0] ? URL.createObjectURL(form.images[0]) : '', status: 'Book' }]);
+      setShowCreateRoomModal(false);
+    };
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
           <div className="p-4 sm:p-6 border-b border-gray-200 flex justify-between items-center">
-            <div>
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Create a room</h2>
-              <p className="text-xs sm:text-sm text-gray-600 mt-1">{step}/2</p>
-            </div>
-            <button onClick={() => setShowCreateRoomModal(false)} className="p-1 hover:bg-gray-100 rounded-full">
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
+            <button onClick={() => setShowCreateRoomModal(false)} className="p-1 hover:bg-gray-100 rounded-full"><X className="h-5 w-5 text-gray-500" /></button>
           </div>
-
-          <div className="p-4 sm:p-6 space-y-4">
-            {step === 1 ? (
+          <form onSubmit={handleCreate} className="p-4 sm:p-6 space-y-4">
+            {step === 1 && (
               <>
-                <input
-                  type="text"
-                  placeholder="Room name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-                <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
-                  <option>Room Categories</option>
-                  <option>Standard</option>
-                  <option>Deluxe</option>
-                  <option>Superior</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Price"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-                <textarea
-                  placeholder="Room description"
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                />
-                <button
-                  onClick={() => setStep(2)}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-                >
-                  Next
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-2">Images</p>
-                  <input type="file" multiple accept="image/*" className="hidden" id="images" />
-                  <label htmlFor="images" className="cursor-pointer text-green-600 hover:text-green-700">
-                    Upload Images
-                  </label>
-                </div>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-2">Upload video (optional)</p>
-                  <input type="file" accept="video/*" className="hidden" id="video" />
-                  <label htmlFor="video" className="cursor-pointer text-green-600 hover:text-green-700">
-                    Upload Video
-                  </label>
-                </div>
-                <button
-                  onClick={() => setShowCreateRoomModal(false)}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-                >
-                  Create
-                </button>
+                <input type="text" placeholder="Room name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} required className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <input type="text" placeholder="Room Category" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} required className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <input type="text" placeholder="Price" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} required className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <textarea placeholder="Room description" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} className="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                <button type="button" onClick={() => setStep(2)} className="w-full bg-green-500 text-white py-2 rounded">Next</button>
               </>
             )}
-          </div>
+            {step === 2 && (
+              <>
+                <div className="mb-2">Images</div>
+                <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="mb-2" />
+                <div className="flex gap-2 flex-wrap mb-2">
+                  {form.images.map((img, i) => <img key={i} src={URL.createObjectURL(img)} alt="Preview" className="w-16 h-12 object-cover rounded" />)}
+                </div>
+                <div className="mb-2">Upload video (optional)</div>
+                <input type="file" accept="video/*" onChange={handleVideoUpload} className="mb-2" />
+                {form.video && <video src={URL.createObjectURL(form.video)} controls className="w-full h-32 rounded mb-2" />}
+                <div className="flex justify-between">
+                  <button type="button" onClick={() => setStep(1)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded">Back</button>
+                  <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">Create Room</button>
+                </div>
+              </>
+            )}
+          </form>
         </div>
       </div>
     );
@@ -415,7 +301,7 @@ const HotelBookingSystem: React.FC = () => {
         {/* Room Categories */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">Room categories</h3>
-          {roomCategories.map((room, index) => (
+          {rooms.map((room, index) => (
             <div key={index} className="bg-white rounded-lg shadow-sm p-4 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <img src={room.image} alt={room.name} className="w-12 h-12 rounded object-cover" />

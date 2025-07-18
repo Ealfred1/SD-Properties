@@ -4,10 +4,9 @@ import HeroSection from './HeroSection';
 
 interface AccountTypeScreenProps {
   onNext: (accountType: string) => void;
-  onBack: () => void;
 }
 
-const AccountTypeScreen: React.FC<AccountTypeScreenProps> = ({ onNext, onBack }) => {
+const AccountTypeScreen: React.FC<AccountTypeScreenProps> = ({ onNext }) => {
   const accountTypes = [
     {
       id: 'multi',

@@ -3,12 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import HeroSection from './HeroSection';
 import { useNavigate } from 'react-router-dom';
 
-interface TenantPasscodeScreenProps {
-  onNext: () => void;
-  onBack: () => void;
-}
-
-const TenantPasscodeScreen: React.FC<TenantPasscodeScreenProps> = ({ onNext, onBack }) => {
+const TenantPasscodeScreen: React.FC = () => {
   const { tenantLogin, isLoading } = useAuth();
   const [passcode, setPasscode] = useState('');
   const [error, setError] = useState('');
