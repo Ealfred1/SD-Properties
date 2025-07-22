@@ -150,7 +150,7 @@ const TenantDashboard: React.FC = () => {
                 <span className="text-gray-700 text-sm sm:text-base">Rent receipt</span>
                 <button className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center hover:bg-yellow-200 transition-colors">
                   <Download className="h-4 w-4 text-yellow-600" />
-                </button>
+              </button>
               </div>
             </div>
             {/* Recent Maintenance */}

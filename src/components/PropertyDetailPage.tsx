@@ -75,7 +75,8 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
       setMaintenanceError('');
       try {
         const res = await apiRequestWithAuth('GET', `/manager/maintenance-requests?property_id=${property.id}`);
-        setMaintenance(res.data || []);
+        // Ensure maintenance is always an array by accessing the correct path
+        setMaintenance(Array.isArray(res.data) ? res.data : res.data?.data || []);
       } catch (err: unknown) {
         setMaintenanceError((err as any)?.message || 'Failed to load maintenance requests.');
       } finally {
@@ -84,12 +85,40 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
     };
     fetchMaintenance();
     // Fetch property units for this property
+    const transformPropertyUnit = (data: any) => {
+      const unit = data.attributes || data;
+      return {
+        id: data.id,
+        name: unit.name,
+        description: unit.description,
+        rent_amount: unit.rent_amount,
+        rent_frequency: unit.rent_frequency,
+        is_occupied: unit.is_occupied,
+        image: unit.image,
+        video: unit.video,
+        agreement_file: unit.agreement_file,
+        payment_receipt: unit.payment_receipt,
+        bed_room: unit.bed_room,
+        bath_room: unit.bath_room,
+        parking: unit.parking || false,
+        security: unit.security || false,
+        water: unit.water || false,
+        electricity: unit.electricity || false,
+        internet: unit.internet || false,
+        tv: unit.tv || false,
+        created_at: unit.created_at,
+        updated_at: unit.updated_at
+      };
+    };
+
     const fetchUnits = async () => {
       setUnitLoading(true);
       setUnitError('');
       try {
         const res = await apiRequestWithAuth('GET', `/manager/property-units?property_id=${property.id}`);
-        setUnits(res.data || []);
+        const transformedUnits = res.data?.data?.map(transformPropertyUnit) || [];
+        console.log(res.data.data)
+        setUnits(transformedUnits);
       } catch (err: unknown) {
         setUnitError((err as any)?.message || 'Failed to load units.');
       } finally {
@@ -108,7 +137,7 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
       }, true);
       // Refresh maintenance list
       const res = await apiRequestWithAuth('GET', `/manager/maintenance-requests?property_id=${property?.id}`);
-      setMaintenance(res.data || []);
+      setMaintenance(Array.isArray(res.data) ? res.data : res.data?.data || []);
     } catch (err: unknown) {
       setMaintenanceError((err as any)?.message || 'Failed to change status.');
     } finally {
@@ -130,7 +159,32 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
       setUnitForm({ name: '', rent_amount: '', rent_frequency: '', is_occupied: '0', property_id: property?.id?.toString() || '' });
       // Refresh units
       const res = await apiRequestWithAuth('GET', `/manager/property-units?property_id=${property?.id}`);
-      setUnits(res.data || []);
+      const transformPropertyUnit = (data: any) => {
+        const unit = data.attributes || data;
+        return {
+          id: data.id,
+          name: unit.name,
+          description: unit.description,
+          rent_amount: unit.rent_amount,
+          rent_frequency: unit.rent_frequency,
+          is_occupied: unit.is_occupied,
+          image: unit.image,
+          video: unit.video,
+          agreement_file: unit.agreement_file,
+          payment_receipt: unit.payment_receipt,
+          bed_room: unit.bed_room,
+          bath_room: unit.bath_room,
+          parking: unit.parking || false,
+          security: unit.security || false,
+          water: unit.water || false,
+          electricity: unit.electricity || false,
+          internet: unit.internet || false,
+          tv: unit.tv || false,
+          created_at: unit.created_at,
+          updated_at: unit.updated_at
+        };
+      };
+      setUnits(res.data?.data?.map(transformPropertyUnit) || []);
     } catch (err: any) {
       setUnitAddError(err?.message || 'Failed to add unit.');
     } finally {
@@ -156,7 +210,32 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
       setShowEditUnitModal(null);
       // Refresh units
       const res = await apiRequestWithAuth('GET', `/manager/property-units?property_id=${property?.id}`);
-      setUnits(res.data || []);
+      const transformPropertyUnit = (data: any) => {
+        const unit = data.attributes || data;
+        return {
+          id: data.id,
+          name: unit.name,
+          description: unit.description,
+          rent_amount: unit.rent_amount,
+          rent_frequency: unit.rent_frequency,
+          is_occupied: unit.is_occupied,
+          image: unit.image,
+          video: unit.video,
+          agreement_file: unit.agreement_file,
+          payment_receipt: unit.payment_receipt,
+          bed_room: unit.bed_room,
+          bath_room: unit.bath_room,
+          parking: unit.parking || false,
+          security: unit.security || false,
+          water: unit.water || false,
+          electricity: unit.electricity || false,
+          internet: unit.internet || false,
+          tv: unit.tv || false,
+          created_at: unit.created_at,
+          updated_at: unit.updated_at
+        };
+      };
+      setUnits(res.data?.data?.map(transformPropertyUnit) || []);
     } catch (err: any) {
       setEditUnitError(err?.message || 'Failed to update unit.');
     } finally {
@@ -172,7 +251,32 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
       await apiRequestWithAuth('DELETE', `/manager/property-units/${id}`);
       // Refresh units
       const res = await apiRequestWithAuth('GET', `/manager/property-units?property_id=${property?.id}`);
-      setUnits(res.data || []);
+      const transformPropertyUnit = (data: any) => {
+        const unit = data.attributes || data;
+        return {
+          id: data.id,
+          name: unit.name,
+          description: unit.description,
+          rent_amount: unit.rent_amount,
+          rent_frequency: unit.rent_frequency,
+          is_occupied: unit.is_occupied,
+          image: unit.image,
+          video: unit.video,
+          agreement_file: unit.agreement_file,
+          payment_receipt: unit.payment_receipt,
+          bed_room: unit.bed_room,
+          bath_room: unit.bath_room,
+          parking: unit.parking || false,
+          security: unit.security || false,
+          water: unit.water || false,
+          electricity: unit.electricity || false,
+          internet: unit.internet || false,
+          tv: unit.tv || false,
+          created_at: unit.created_at,
+          updated_at: unit.updated_at
+        };
+      };
+      setUnits(res.data?.data?.map(transformPropertyUnit) || []);
     } catch (err: any) {
       setDeleteUnitError(err?.message || 'Failed to delete unit.');
     } finally {
@@ -185,15 +289,45 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
     if (!unitImageFiles || showUnitImageModal == null) return;
     setUnitImageLoading(true);
     setUnitImageError('');
-    const formData = new FormData();
-    Array.from(unitImageFiles).forEach((file) => formData.append('images[]', file));
+    
     try {
+      // Create FormData properly for image uploads
+      const formData = new FormData();
+      Array.from(unitImageFiles).forEach((file, index) => {
+        formData.append(`images[${index}]`, file);
+      });
+
       await apiRequestWithAuth('POST', `/manager/property-units/${showUnitImageModal}/images`, formData, true);
       setShowUnitImageModal(null);
       setUnitImageFiles(null);
       // Refresh units
       const res = await apiRequestWithAuth('GET', `/manager/property-units?property_id=${property?.id}`);
-      setUnits(res.data || []);
+      const transformPropertyUnit = (data: any) => {
+        const unit = data.attributes || data;
+        return {
+          id: data.id,
+          name: unit.name,
+          description: unit.description,
+          rent_amount: unit.rent_amount,
+          rent_frequency: unit.rent_frequency,
+          is_occupied: unit.is_occupied,
+          image: unit.image,
+          video: unit.video,
+          agreement_file: unit.agreement_file,
+          payment_receipt: unit.payment_receipt,
+          bed_room: unit.bed_room,
+          bath_room: unit.bath_room,
+          parking: unit.parking || false,
+          security: unit.security || false,
+          water: unit.water || false,
+          electricity: unit.electricity || false,
+          internet: unit.internet || false,
+          tv: unit.tv || false,
+          created_at: unit.created_at,
+          updated_at: unit.updated_at
+        };
+      };
+      setUnits(res.data?.data?.map(transformPropertyUnit) || []);
     } catch (err: any) {
       setUnitImageError(err?.message || 'Failed to upload images.');
     } finally {
@@ -219,7 +353,7 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
     setError('');
     try {
       await apiRequestWithAuth(
-        'POST',
+        'PUT',
         `/manager/properties/${property.id}`,
         { ...editData, _method: 'PUT' },
         true
@@ -249,15 +383,20 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
     }
   };
 
-  // Upload images handler
+  // Upload images handler - FIXED
   const handleImageUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!imageFiles) return;
     setLoading(true);
     setError('');
-    const formData = new FormData();
-    Array.from(imageFiles).forEach((file) => formData.append('images[]', file));
+    
     try {
+      // Create FormData properly for image uploads
+      const formData = new FormData();
+      Array.from(imageFiles).forEach((file, index) => {
+        formData.append(`images[${index}]`, file);
+      });
+
       await apiRequestWithAuth(
         'POST',
         `/manager/properties/${property.id}/images`,
@@ -265,6 +404,7 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
         true
       );
       setShowImageModal(false);
+      setImageFiles(null);
       if (onUploadImages) onUploadImages(property);
     } catch (err: any) {
       setError(err?.message || 'Failed to upload images.');
@@ -272,7 +412,7 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="flex-1 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

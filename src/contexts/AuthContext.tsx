@@ -180,8 +180,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(false);
         return true;
       } else {
-        setIsLoading(false);
-        return false;
+      setIsLoading(false);
+      return false;
       }
     } catch (err: any) {
       // Check for unverified email error

@@ -5,14 +5,55 @@ import { apiRequestWithAuth } from '../utils/api';
 interface Property {
   id: number;
   title: string;
+  description: string;
   address: string;
   city: string;
-  state: string;
+  state: string | null;
   price: string;
   is_available: boolean;
-  image?: string;
-  [key: string]: any;
+  image: string | null;
+  property_type: string | null;
+  property_category: string;
+  created_at: string;
+  updated_at: string;
 }
+
+interface ApiPropertyResponse {
+  id: number;
+  type: string;
+  attributes: {
+    title: string;
+    description: string;
+    address: string;
+    city: string;
+    state: string | null;
+    price: string;
+    is_available: boolean;
+    image: string | null;
+    property_type: string | null;
+    property_category: string;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+const transformPropertyData = (data: ApiPropertyResponse[]): Property[] => {
+  return (data || []).map((item) => ({
+    id: item.id,
+    title: item.attributes.title,
+    description: item.attributes.description,
+    address: item.attributes.address,
+    city: item.attributes.city,
+    state: item.attributes.state,
+    price: item.attributes.price,
+    is_available: item.attributes.is_available,
+    image: item.attributes.image,
+    property_type: item.attributes.property_type,
+    property_category: item.attributes.property_category,
+    created_at: item.attributes.created_at,
+    updated_at: item.attributes.updated_at
+  }));
+};
 
 interface PropertiesPageProps {
   onSelectProperty: (property: Property) => void;
@@ -38,13 +79,31 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ onSelectProperty }) => 
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
 
+  const transformPropertyData = (data: any[]) => {
+    return (data || []).map((item) => ({
+      id: item.id,
+      title: item.attributes.title,
+      description: item.attributes.description,
+      address: item.attributes.address,
+      city: item.attributes.city,
+      state: item.attributes.state,
+      price: item.attributes.price,
+      is_available: item.attributes.is_available,
+      image: item.attributes.image,
+      property_type: item.attributes.property_type,
+      property_category: item.attributes.property_category,
+      created_at: item.attributes.created_at,
+      updated_at: item.attributes.updated_at
+    }));
+  };
+
   useEffect(() => {
     const fetchProperties = async () => {
       setLoading(true);
       setError('');
       try {
         const res = await apiRequestWithAuth('GET', '/manager/properties');
-        setProperties(res.data || []);
+        setProperties(transformPropertyData(res.data));
       } catch (err: any) {
         setError(err?.message || 'Failed to load properties.');
       } finally {
@@ -70,7 +129,7 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ onSelectProperty }) => 
       });
       // Refresh properties
       const res = await apiRequestWithAuth('GET', '/manager/properties');
-      setProperties(res.data || []);
+      setProperties(transformPropertyData(res.data));
     } catch (err: any) {
       setAddError(err?.message || 'Failed to add property.');
     } finally {
