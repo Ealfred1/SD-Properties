@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Bath, Download, Edit, Trash2, Upload, ArrowLeft, Plus } from 'lucide-react';
+import { Home, Bath, Download, Edit, Trash2, Upload, ArrowLeft, Plus, User } from 'lucide-react';
 import { apiRequestWithAuth } from '../utils/api';
 
 interface Property {
@@ -84,41 +84,16 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
       }
     };
     fetchMaintenance();
-    // Fetch property units for this property
-    const transformPropertyUnit = (data: any) => {
-      const unit = data.attributes || data;
-      return {
-        id: data.id,
-        name: unit.name,
-        description: unit.description,
-        rent_amount: unit.rent_amount,
-        rent_frequency: unit.rent_frequency,
-        is_occupied: unit.is_occupied,
-        image: unit.image,
-        video: unit.video,
-        agreement_file: unit.agreement_file,
-        payment_receipt: unit.payment_receipt,
-        bed_room: unit.bed_room,
-        bath_room: unit.bath_room,
-        parking: unit.parking || false,
-        security: unit.security || false,
-        water: unit.water || false,
-        electricity: unit.electricity || false,
-        internet: unit.internet || false,
-        tv: unit.tv || false,
-        created_at: unit.created_at,
-        updated_at: unit.updated_at
-      };
-    };
 
     const fetchUnits = async () => {
       setUnitLoading(true);
       setUnitError('');
       try {
         const res = await apiRequestWithAuth('GET', `/manager/property-units?property_id=${property.id}`);
-        const transformedUnits = res.data?.data?.map(transformPropertyUnit) || [];
-        console.log(res.data.data)
-        setUnits(transformedUnits);
+        console.log('Full API response:', res);
+        setUnits(res.data);
+
+        console.log(units)
       } catch (err: unknown) {
         setUnitError((err as any)?.message || 'Failed to load units.');
       } finally {
@@ -206,7 +181,7 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
     setEditUnitLoading(true);
     setEditUnitError('');
     try {
-      await apiRequestWithAuth('POST', `/manager/property-units/${editUnitForm.id}`, { ...editUnitForm, _method: 'put' }, true);
+      await apiRequestWithAuth('PUT', `/manager/property-units/${editUnitForm.id}`, editUnitForm, false);
       setShowEditUnitModal(null);
       // Refresh units
       const res = await apiRequestWithAuth('GET', `/manager/property-units?property_id=${property?.id}`);
@@ -355,8 +330,8 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
       await apiRequestWithAuth(
         'PUT',
         `/manager/properties/${property.id}`,
-        { ...editData, _method: 'PUT' },
-        true
+        editData, // send as plain object, apiRequestWithAuth will JSON.stringify it
+        false // isFormData = false, so Content-Type is application/json
       );
       setShowEditModal(false);
       if (onUpdate) onUpdate({ ...property, ...editData });
@@ -403,49 +378,54 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
         formData,
         true
       );
+      // Re-fetch property details to get the new image
+      const updated = await apiRequestWithAuth('GET', `/manager/properties/${property.id}`);
+      const newImage = updated.data?.image || updated.data?.attributes?.image;
+      setEditData((prev) => ({ ...prev, image: newImage }));
+      property.image = newImage;
       setShowImageModal(false);
       setImageFiles(null);
-      if (onUploadImages) onUploadImages(property);
+      if (onUploadImages) onUploadImages({ ...property, image: newImage });
     } catch (err: any) {
       setError(err?.message || 'Failed to upload images.');
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="flex-1 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <button onClick={onBack} className="mb-4 flex items-center text-gray-600 hover:text-green-600 text-sm">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Properties
         </button>
         {error && <div className="text-red-600 mb-4">{error}</div>}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
-          {/* Property Details - Left Column */}
-          <div className="xl:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
-              {/* Property Image */}
-              <div className="mb-4 sm:mb-6">
-                <img
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 sm:gap-8">
+        {/* Property Details - Left Column */}
+        <div className="xl:col-span-2">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+            {/* Property Image */}
+            <div className="mb-4 sm:mb-6">
+              <img
                   src={property.image || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop'}
                   alt={property.title}
-                  className="w-full h-48 sm:h-56 lg:h-64 object-cover rounded-lg"
-                />
-              </div>
-              {/* Property Info */}
-              <div className="mb-4 sm:mb-6">
+                className="w-full h-48 sm:h-56 lg:h-64 object-cover rounded-lg"
+              />
+            </div>
+            {/* Property Info */}
+            <div className="mb-4 sm:mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">{property.title}</h2>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-2 sm:space-y-0 mb-4">
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                      <Home className="h-4 w-4 text-yellow-600" />
-                    </div>
-                    <span className="text-sm sm:text-base">{property.bedrooms || 2} bedroom flat</span>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-2 sm:space-y-0 mb-4">
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <Home className="h-4 w-4 text-yellow-600" />
                   </div>
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                      <Bath className="h-4 w-4 text-yellow-600" />
-                    </div>
+                    <span className="text-sm sm:text-base">{property.bedrooms || 2} bedroom flat</span>
+                </div>
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <Bath className="h-4 w-4 text-yellow-600" />
+                  </div>
                     <span className="text-sm sm:text-base">{property.bathrooms || 2} bathroom</span>
                   </div>
                 </div>
@@ -464,34 +444,34 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
                   </button>
                 </div>
               </div>
-              {/* Description */}
-              <div className="mb-4 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">Description</h3>
-                <div className="text-gray-600 space-y-2 text-xs sm:text-sm leading-relaxed">
+            {/* Description */}
+            <div className="mb-4 sm:mb-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">Description</h3>
+              <div className="text-gray-600 space-y-2 text-xs sm:text-sm leading-relaxed">
                   <p>{property.description || 'No description provided.'}</p>
                 </div>
               </div>
               {/* Documents (stub) */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                  <span className="text-gray-700 text-sm sm:text-base">Tenancy agreement</span>
-                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-yellow-200 transition-colors">
-                    <Download className="h-4 w-4 text-yellow-600" />
-                  </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                <span className="text-gray-700 text-sm sm:text-base">Tenancy agreement</span>
+                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-yellow-200 transition-colors">
+                  <Download className="h-4 w-4 text-yellow-600" />
                 </div>
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                  <span className="text-gray-700 text-sm sm:text-base">Rent receipt</span>
-                  <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-yellow-200 transition-colors">
-                    <Download className="h-4 w-4 text-yellow-600" />
-                  </div>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                <span className="text-gray-700 text-sm sm:text-base">Rent receipt</span>
+                <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-yellow-200 transition-colors">
+                  <Download className="h-4 w-4 text-yellow-600" />
                 </div>
               </div>
             </div>
           </div>
-          {/* Right Column */}
-          <div className="space-y-6">
+        </div>
+        {/* Right Column */}
+        <div className="space-y-6">
             {/* Tenant Card (stub) */}
-            <div className="bg-green-500 text-white rounded-lg p-4 sm:p-6">
+          <div className="bg-green-500 text-white rounded-lg p-4 sm:p-6">
               <h3 className="text-base sm:text-lg font-semibold mb-1">Tenant (stub)</h3>
               <p className="text-green-100 text-xs sm:text-sm mb-3 sm:mb-4">Tenant info here</p>
             </div>
@@ -527,43 +507,53 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
               </div>
             </div>
             {/* Apartment Units Section */}
-            <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mt-6">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900">Apartment Units</h3>
+            <div className="bg-white rounded-lg p-4 sm:p-6 mt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Apartment Units</h3>
                 <button
-                  className="bg-green-500 text-white rounded-full p-2 shadow hover:bg-green-600"
+                  className="bg-green-500 hover:bg-green-600 text-white rounded-full p-3 shadow transition-colors"
                   onClick={() => setShowAddUnitModal(true)}
                   title="Add Apartment Unit"
                 >
-                  <Plus className="h-5 w-5" />
+                  <Plus className="h-6 w-6" />
                 </button>
               </div>
               {unitLoading && <div className="text-gray-500">Loading units...</div>}
               {unitError && <div className="text-red-600 mb-2">{unitError}</div>}
-              <div className="space-y-2">
-                {units.length === 0 && !unitLoading && <div className="text-gray-500">No units for this property.</div>}
+              <div className="flex flex-col gap-6">
                 {units.map((unit) => (
-                  <div key={unit.id} className="flex items-center justify-between p-2 border rounded">
-                    <div>
-                      <div className="font-semibold text-gray-900">{unit.name}</div>
-                      <div className="text-xs text-gray-500">Rent: ₦{unit.rent_amount} / {unit.rent_frequency}</div>
-                      <div className="text-xs text-gray-500">Occupied: {unit.is_occupied === '1' ? 'Yes' : 'No'}</div>
+                  <div key={unit.id} className="bg-white rounded-xl shadow p-5 flex flex-col gap-3 border border-gray-100">
+                    <div className="flex items-center gap-3 mb-1">
+                      <Home className="h-5 w-5 text-green-500 flex-shrink-0" />
+                      <span className="text-xl font-bold text-gray-900">{unit.attributes?.name}</span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Bath className="h-4 w-4 text-blue-400" />
+                      <span>Rent:</span>
+                      <span className="font-medium text-gray-900">₦{unit.attributes?.rent_amount}</span>
+                      <span className="text-xs text-gray-500">/ {unit.attributes?.rent_frequency}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <User className="h-4 w-4 text-yellow-500" />
+                      <span>Occupied:</span>
+                      <span className="font-medium text-gray-900">{unit.attributes?.is_occupied === '1' ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <div className="flex justify-end gap-2 mt-2">
                       <button
-                        className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium hover:bg-yellow-200"
+                        className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded font-medium text-xs hover:bg-yellow-200 transition-colors"
                         onClick={() => setShowUnitImageModal(unit.id)}
                       >
                         Upload Images
                       </button>
                       <button
-                        className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium hover:bg-blue-200"
+                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded font-medium text-xs hover:bg-blue-200 transition-colors"
                         onClick={() => openEditUnitModal(unit)}
                       >
                         Edit
                       </button>
                       <button
-                        className="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium hover:bg-red-200"
+                        className="px-3 py-1 bg-red-100 text-red-700 rounded font-medium text-xs hover:bg-red-200 transition-colors"
                         onClick={() => handleDeleteUnit(unit.id)}
                         disabled={deleteUnitLoading === unit.id}
                       >
@@ -572,8 +562,8 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
                     </div>
                   </div>
                 ))}
-                {deleteUnitError && <div className="text-red-600 mt-2">{deleteUnitError}</div>}
               </div>
+              {deleteUnitError && <div className="text-red-600 mt-2">{deleteUnitError}</div>}
             </div>
             {/* Add Apartment Unit Modal */}
             {showAddUnitModal && (
@@ -592,10 +582,10 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
                     <div className="flex justify-between mt-4">
                       <button type="button" onClick={() => setShowAddUnitModal(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded">Cancel</button>
                       <button type="submit" disabled={unitAddLoading} className="bg-green-500 text-white px-4 py-2 rounded">{unitAddLoading ? 'Adding...' : 'Add Unit'}</button>
-                    </div>
+          </div>
                   </form>
                 </div>
-              </div>
+            </div>
             )}
           </div>
         </div>

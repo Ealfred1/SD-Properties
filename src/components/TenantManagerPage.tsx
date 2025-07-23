@@ -106,7 +106,7 @@ const TenantManagerPage: React.FC = () => {
     setAddLoading(true);
     setAddError('');
     try {
-      await apiRequestWithAuth('POST', '/manager/tenants', addForm, true);
+      await apiRequestWithAuth('POST', '/manager/tenants/', addForm, false);
       setShowAddModal(false);
       setAddForm({ name: '', email: '', phone: '', marital_status: '', property_unit_id: '', rent_start: '', rent_end: '', password: '' });
       // Refresh tenants
@@ -154,7 +154,7 @@ const TenantManagerPage: React.FC = () => {
     setEditLoading(true);
     setEditError('');
     try {
-      await apiRequestWithAuth('POST', `/manager/tenants/${editForm.id}`, { ...editForm, _method: 'put' }, true);
+      await apiRequestWithAuth('PUT', `/manager/tenants/${editForm.id}`, editForm, false);
       setShowEditModal(false);
       // Refresh tenants
       const res = await apiRequestWithAuth('GET', '/manager/tenants');
