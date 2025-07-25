@@ -7,7 +7,7 @@ const TenantDashboard: React.FC = () => {
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const { logout, tenantData } = useAuth();
 
-  if (!tenantData || !tenantData.propertyDetails) {
+  if (!tenantData || !tenantData.user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -18,8 +18,25 @@ const TenantDashboard: React.FC = () => {
     );
   }
 
+  // Extract user, unit, property, files
+  const user = tenantData.user;
+  const userAttr = user.attributes || {};
+  const unit = user.relationships?.unit;
+  const unitAttr = unit?.attributes || {};
+  const property = unit?.relationships?.property;
+  const propertyAttr = property?.attributes || {};
+  type PropertyFile = { id: number; attributes: { name: string; path: string } };
+  const files: PropertyFile[] = (property?.relationships?.files || []) as PropertyFile[];
+  
+  // Also get property_apartment data if available
+  const propertyApartment = tenantData.property_apartment;
+  const apartmentAttr = propertyApartment?.attributes || {};
+  const apartmentProperty = propertyApartment?.relationships?.property;
+  const apartmentPropertyAttr = apartmentProperty?.attributes || {};
+  const apartmentFiles: PropertyFile[] = (apartmentProperty?.relationships?.files || []) as PropertyFile[];
+
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -49,18 +66,17 @@ const TenantDashboard: React.FC = () => {
         <div 
           className="absolute inset-0 bg-cover bg-center opacity-30"
           style={{
-            backgroundImage: 'url(https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1200&h=400&fit=crop)'
+            backgroundImage: `url(${files[0]?.attributes?.path || apartmentFiles[0]?.attributes?.path || 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=1200&h=400&fit=crop'})`
           }}
         />
-        
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
           <div className="flex items-center space-x-2 text-xs sm:text-sm mb-3 sm:mb-4">
             <a href="#" className="text-yellow-400 hover:text-yellow-300">Home</a>
             <span className="text-gray-300">›</span>
             <span className="text-gray-300">Dashboard</span>
           </div>
-          
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">Welcome, {userAttr.name}</h1>
+          <div className="text-sm text-gray-200 mt-2">Tenant Number: {userAttr.tenant_number}</div>
         </div>
       </div>
 
@@ -70,18 +86,24 @@ const TenantDashboard: React.FC = () => {
           {/* Property Details - Left Column */}
           <div className="xl:col-span-2">
             <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
-              {/* Property Image */}
+              {/* Property Image Gallery */}
               <div className="mb-4 sm:mb-6">
-                <img
-                  src={tenantData.propertyDetails.image}
-                  alt={tenantData.flatNumber}
-                  className="w-full h-48 sm:h-56 lg:h-64 object-cover rounded-lg"
-                />
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Property Images</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {(files.length > 0 ? files : apartmentFiles).map((file: PropertyFile) => (
+                    <img
+                      key={file.id}
+                      src={file.attributes?.path}
+                      alt={file.attributes?.name}
+                      className="w-full h-40 object-cover rounded-lg"
+                    />
+                  ))}
+                </div>
               </div>
               {/* Property Info */}
               <div className="mb-4 sm:mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">
-                  {tenantData.flatNumber}
+                  {(propertyAttr.title || apartmentPropertyAttr.title)} ({unitAttr.name || apartmentAttr.name})
                 </h2>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-2 sm:space-y-0 mb-4">
                   <div className="flex items-center space-x-2 text-gray-600">
@@ -89,7 +111,7 @@ const TenantDashboard: React.FC = () => {
                       <Home className="h-4 w-4 text-yellow-600" />
                     </div>
                     <span className="text-sm sm:text-base">
-                      {tenantData.propertyDetails.bedrooms} bedroom flat
+                      {unitAttr.bed_room || apartmentAttr.bed_room} bedroom flat
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 text-gray-600">
@@ -97,8 +119,27 @@ const TenantDashboard: React.FC = () => {
                       <Bath className="h-4 w-4 text-yellow-600" />
                     </div>
                     <span className="text-sm sm:text-base">
-                      {tenantData.propertyDetails.bathrooms} bathroom
+                      {unitAttr.bath_room || apartmentAttr.bath_room} bathroom
                     </span>
+                  </div>
+                </div>
+                <div className="text-gray-700 text-sm mb-2">
+                  {(propertyAttr.address || apartmentPropertyAttr.address)}, {(propertyAttr.city || apartmentPropertyAttr.city)}, {(propertyAttr.state || apartmentPropertyAttr.state)}
+                </div>
+                <div className="text-gray-700 text-sm mb-4">
+                  Rent: ₦{(unitAttr.rent_amount || apartmentAttr.rent_amount)} / {(unitAttr.rent_frequency || apartmentAttr.rent_frequency)}
+                </div>
+                
+                {/* Amenities */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Amenities</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {unitAttr.parking && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Parking</span>}
+                    {unitAttr.security && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Security</span>}
+                    {unitAttr.water && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Water</span>}
+                    {unitAttr.electricity && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Electricity</span>}
+                    {unitAttr.internet && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Internet</span>}
+                    {unitAttr.tv && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">TV</span>}
                   </div>
                 </div>
               </div>
@@ -106,29 +147,53 @@ const TenantDashboard: React.FC = () => {
               <div className="mb-6">
                 <h3 className="text-base font-semibold text-gray-900 mb-2">Description</h3>
                 <p className="text-gray-700 text-sm whitespace-pre-line">
-                  {tenantData.propertyDetails.description}
+                  {propertyAttr.description || apartmentPropertyAttr.description || 'No description available'}
                 </p>
               </div>
             </div>
           </div>
-          {/* Right Column - Agent Card and Actions */}
+          {/* Right Column - Tenant Info and Actions */}
           <div className="space-y-6">
-            {/* Agent Card */}
+            {/* Tenant Card */}
             <div className="bg-green-500 text-white rounded-lg p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold mb-1">{tenantData.agentName}</h3>
-              <p className="text-green-100 text-xs sm:text-sm mb-3 sm:mb-4">Agent</p>
+              <h3 className="text-base sm:text-lg font-semibold mb-1">{userAttr.name}</h3>
+              <p className="text-green-100 text-xs sm:text-sm mb-3 sm:mb-4">Tenant</p>
               <div className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
                 <div className="flex justify-between items-center">
                   <span className="text-green-100 text-xs sm:text-sm">Phone number</span>
-                  <span className="font-semibold text-xs sm:text-sm">{tenantData.agentPhone}</span>
+                  <span className="font-semibold text-xs sm:text-sm">{userAttr.phone}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-green-100 text-xs sm:text-sm">Price/year</span>
-                  <span className="font-semibold text-xs sm:text-sm">${tenantData.rentAmount}</span>
+                  <span className="text-green-100 text-xs sm:text-sm">Email</span>
+                  <span className="font-semibold text-xs sm:text-sm">{userAttr.email}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-green-100 text-xs sm:text-sm">Last payment date</span>
-                  <span className="font-semibold text-xs sm:text-sm">{tenantData.lastPaymentDate}</span>
+                  <span className="text-green-100 text-xs sm:text-sm">Marital Status</span>
+                  <span className="font-semibold text-xs sm:text-sm">{userAttr.marital_status}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-green-100 text-xs sm:text-sm">Gender</span>
+                  <span className="font-semibold text-xs sm:text-sm">{userAttr.gender || 'Not specified'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-green-100 text-xs sm:text-sm">Nationality</span>
+                  <span className="font-semibold text-xs sm:text-sm">{userAttr.nationality || 'Not specified'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-green-100 text-xs sm:text-sm">Occupation</span>
+                  <span className="font-semibold text-xs sm:text-sm">{userAttr.occupation || 'Not specified'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-green-100 text-xs sm:text-sm">Income</span>
+                  <span className="font-semibold text-xs sm:text-sm">{userAttr.income || 'Not specified'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-green-100 text-xs sm:text-sm">Rent Start</span>
+                  <span className="font-semibold text-xs sm:text-sm">{userAttr.rent_start}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-green-100 text-xs sm:text-sm">Rent End</span>
+                  <span className="font-semibold text-xs sm:text-sm">{userAttr.rent_end}</span>
                 </div>
               </div>
               <button 
@@ -142,38 +207,59 @@ const TenantDashboard: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                 <span className="text-gray-700 text-sm sm:text-base">Tenancy agreement</span>
-                <button className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center hover:bg-yellow-200 transition-colors">
-                  <Download className="h-4 w-4 text-yellow-600" />
-                </button>
+                {(unitAttr.agreement_file || apartmentAttr.agreement_file) && (
+                  <a href={(unitAttr.agreement_file ?? undefined) || (apartmentAttr.agreement_file ?? undefined) || undefined} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center hover:bg-yellow-200 transition-colors">
+                    <Download className="h-4 w-4 text-yellow-600" />
+                  </a>
+                )}
               </div>
               <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                 <span className="text-gray-700 text-sm sm:text-base">Rent receipt</span>
-                <button className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center hover:bg-yellow-200 transition-colors">
-                  <Download className="h-4 w-4 text-yellow-600" />
-              </button>
+                {(unitAttr.payment_receipt || apartmentAttr.payment_receipt) && (
+                  <a href={(unitAttr.payment_receipt ?? undefined) || (apartmentAttr.payment_receipt ?? undefined) || undefined} target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center hover:bg-yellow-200 transition-colors">
+                    <Download className="h-4 w-4 text-yellow-600" />
+                  </a>
+                )}
               </div>
             </div>
-            {/* Recent Maintenance */}
+            {/* Property Details */}
             <div className="bg-white rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent maintenance</h3>
-              <div className="space-y-2 sm:space-y-3">
-                {tenantData.maintenance?.map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center py-2">
-                    <span className="text-gray-700 text-xs sm:text-sm">{item.title}</span>
-                    <span className="text-xs text-gray-500">{item.date}</span>
-                  </div>
-                ))}
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Details</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-gray-600 text-sm">Property Type</span>
+                  <span className="font-medium text-sm">{propertyAttr.property_type || apartmentPropertyAttr.property_type}</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-gray-600 text-sm">Status</span>
+                  <span className="font-medium text-sm">{propertyAttr.status || apartmentPropertyAttr.status}</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-gray-600 text-sm">Price</span>
+                  <span className="font-medium text-sm">₦{(propertyAttr.price || apartmentPropertyAttr.price)}</span>
+                </div>
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-gray-600 text-sm">Created</span>
+                  <span className="font-medium text-sm">{(propertyAttr.created_at || apartmentPropertyAttr.created_at)?.split(' ')[0]}</span>
+                </div>
               </div>
             </div>
             {/* Rent Dates */}
             <div className="bg-white rounded-lg p-4 mt-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Rent Information</h3>
               <div className="flex justify-between items-center py-2">
                 <span className="text-gray-600 text-sm">Rent Start date</span>
-                <span className="font-medium text-sm">{tenantData.rentStartDate}</span>
+                <span className="font-medium text-sm">{userAttr.rent_start}</span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-gray-600 text-sm">Rent expiration date</span>
-                <span className="font-medium text-sm">{tenantData.rentExpiryDate}</span>
+                <span className="font-medium text-sm">{userAttr.rent_end}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-600 text-sm">Active Status</span>
+                <span className={`font-medium text-sm ${userAttr.is_active === "1" ? "text-green-600" : "text-red-600"}`}>
+                  {userAttr.is_active === "1" ? "Active" : "Inactive"}
+                </span>
               </div>
             </div>
           </div>

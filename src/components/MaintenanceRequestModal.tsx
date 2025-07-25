@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Upload } from 'lucide-react';
 import { TenantData } from '../types/auth';
+import { apiRequest } from '../utils/api';
 
 interface MaintenanceRequestModalProps {
   onClose: () => void;
@@ -8,25 +9,61 @@ interface MaintenanceRequestModalProps {
 }
 
 const MaintenanceRequestModal: React.FC<MaintenanceRequestModalProps> = ({ onClose, tenantData }) => {
-  const [formData, setFormData] = useState({
-    name: tenantData.name,
-    phoneNumber: tenantData.phone,
-    flat: tenantData.flatNumber,
-    description: '',
-  });
+  // Extract tenant info from new structure
+  const user = tenantData.user;
+  const userAttr = user.attributes || {};
+  const unit = user.relationships?.unit;
+  const unitAttr = unit?.attributes || {};
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    priority: 'medium',
+  });
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle maintenance request submission
-    console.log('Maintenance request submitted:', formData);
-    onClose();
+    setSubmitting(true);
+    setError(null);
+    try {
+      const data = new FormData();
+      data.append('title', formData.title);
+      data.append('description', formData.description);
+      data.append('priority', formData.priority);
+      data.append('name', userAttr.name || '');
+      data.append('phone', userAttr.phone || '');
+      data.append('flat', unitAttr.name || '');
+      if (files) {
+        Array.from(files).forEach((file, idx) => {
+          data.append(`photos[${idx}]`, file);
+        });
+      }
+      const token = localStorage.getItem('tenantToken') || '';
+      await apiRequest('POST', '/tenants/request-maintenance', data, token, true);
+      setSuccess(true);
+      setTimeout(() => {
+        setSubmitting(false);
+        onClose();
+      }, 1200);
+    } catch (err: any) {
+      setError('Failed to submit maintenance request.');
+      setSubmitting(false);
+    }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFiles(e.target.files);
   };
 
   return (
@@ -52,41 +89,43 @@ const MaintenanceRequestModal: React.FC<MaintenanceRequestModalProps> = ({ onClo
             <input
               type="text"
               name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Name"
+              value={userAttr.name || ''}
+              readOnly
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
               required
-              readOnly
             />
           </div>
-
           <div>
             <input
               type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              placeholder="Phone number"
+              name="phone"
+              value={userAttr.phone || ''}
+              readOnly
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
               required
-              readOnly
             />
           </div>
-
           <div>
             <input
               type="text"
               name="flat"
-              value={formData.flat}
-              onChange={handleChange}
-              placeholder="Flat"
+              value={unitAttr.name || ''}
+              readOnly
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
               required
-              readOnly
             />
           </div>
-
+          <div>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Title (e.g. Bad Tap)"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+              required
+            />
+          </div>
           <div>
             <textarea
               name="description"
@@ -98,7 +137,20 @@ const MaintenanceRequestModal: React.FC<MaintenanceRequestModalProps> = ({ onClo
               required
             />
           </div>
-
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+            <select
+              name="priority"
+              value={formData.priority}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
+              required
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
           {/* Photo Upload Section */}
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
             <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
@@ -110,6 +162,7 @@ const MaintenanceRequestModal: React.FC<MaintenanceRequestModalProps> = ({ onClo
               accept="image/*"
               className="hidden"
               id="photo-upload"
+              onChange={handleFileChange}
             />
             <label
               htmlFor="photo-upload"
@@ -117,13 +170,22 @@ const MaintenanceRequestModal: React.FC<MaintenanceRequestModalProps> = ({ onClo
             >
               Choose Photos
             </label>
+            {files && files.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2 justify-center">
+                {Array.from(files).map((file, idx) => (
+                  <span key={idx} className="text-xs bg-gray-200 px-2 py-1 rounded">{file.name}</span>
+                ))}
+              </div>
+            )}
           </div>
-
+          {error && <div className="text-red-600 text-sm text-center">{error}</div>}
+          {success && <div className="text-green-600 text-sm text-center">Request submitted successfully!</div>}
           <button
             type="submit"
-            className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 text-sm sm:text-base"
+            className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 text-sm sm:text-base disabled:opacity-60"
+            disabled={submitting}
           >
-            Add
+            {submitting ? 'Submitting...' : 'Add'}
           </button>
         </form>
       </div>

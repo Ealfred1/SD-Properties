@@ -12,15 +12,12 @@ const TenantPasscodeScreen: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
-    if (passcode.trim()) {
-      console.log('Attempting tenant login with passcode:', passcode);
-      const success = await tenantLogin('TENANT001', passcode.trim());
+    const tenantId = localStorage.getItem('pendingTenantId') || '';
+    if (passcode.trim() && tenantId) {
+      const success = await tenantLogin(tenantId, passcode.trim());
       if (success) {
-        console.log('Tenant login successful');
         navigate('/tenant/dashboard');
       } else {
-        console.log('Tenant login failed');
         setError('Invalid passcode. Please try again.');
       }
     }

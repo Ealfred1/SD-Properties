@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import HeroSection from './HeroSection';
+import { useNavigate } from 'react-router-dom';
 
 interface TenantWelcomeScreenProps {
   onNext: (tenantId: string) => void;
@@ -7,11 +8,14 @@ interface TenantWelcomeScreenProps {
 
 const TenantWelcomeScreen: React.FC<TenantWelcomeScreenProps> = ({ onNext }) => {
   const [tenantId, setTenantId] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (tenantId.trim()) {
+      localStorage.setItem('pendingTenantId', tenantId.trim());
       onNext(tenantId.trim());
+      navigate('/tenant/passcode');
     }
   };
 

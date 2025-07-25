@@ -125,7 +125,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for stored user session
     const storedUser = localStorage.getItem('user');
     const storedTenantData = localStorage.getItem('tenantData');
-    
+    const tenantToken = localStorage.getItem('tenantToken');
+
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
@@ -147,10 +148,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('user');
       }
     }
-    if (storedTenantData) {
+    if (tenantToken) {
+      // Always fetch fresh dashboard data if token exists
+      apiRequest('GET', '/tenants/dashboard', undefined, tenantToken)
+        .then((res) => {
+          if (res && res.data) {
+            setTenantData(res.data);
+            localStorage.setItem('tenantData', JSON.stringify(res.data));
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to fetch tenant dashboard:', err);
+          setTenantData(null);
+          localStorage.removeItem('tenantData');
+        });
+    } else if (storedTenantData) {
       try {
         const parsedTenantData = JSON.parse(storedTenantData);
-        console.log('Restored tenant data from localStorage:', parsedTenantData);
         setTenantData(parsedTenantData);
       } catch (error) {
         console.error('Error parsing stored tenant data:', error);
@@ -196,42 +210,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const tenantLogin = async (tenantId: string, passcode: string): Promise<boolean> => {
     setIsLoading(true);
-    console.log('Tenant login attempt for:', tenantId, 'with passcode:', passcode);
-    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Check if tenant ID and passcode are valid
-      if (tenantId === 'TENANT001' && passcode === '1234') {
+      const formData = new FormData();
+      formData.append('tenant_number', tenantId);
+      formData.append('password', passcode);
+      const res = await apiRequest('POST', '/tenants/auth/login', formData, true);
+      if (res && res.data && res.data.token && res.data.user) {
         const tenantUser: User = {
-          id: 'tenant_' + tenantId,
-          email: '',
-          name: MOCK_TENANT_DATA.name,
+          id: String(res.data.user.id),
+          email: res.data.user.email,
+          name: res.data.user.name,
           role: 'tenant',
           permissions: ROLE_PERMISSIONS.tenant,
-          properties: ['1'],
-          tenantId: tenantId,
-          createdAt: new Date().toISOString(),
+          properties: [],
+          tenantId: res.data.user.tenant_number,
+          createdAt: res.data.user.created_at,
           lastLogin: new Date().toISOString()
         };
-        
-        console.log('Tenant login successful, setting user:', tenantUser);
-        console.log('Setting tenant data:', MOCK_TENANT_DATA);
-        
         setUser(tenantUser);
-        setTenantData(MOCK_TENANT_DATA);
         localStorage.setItem('user', JSON.stringify(tenantUser));
-        localStorage.setItem('tenantData', JSON.stringify(MOCK_TENANT_DATA));
+        localStorage.setItem('tenantToken', res.data.token);
+        // Fetch dashboard data after login
+        const dashboardRes = await apiRequest('GET', '/tenants/dashboard', undefined, res.data.token);
+        if (dashboardRes && dashboardRes.data) {
+          setTenantData(dashboardRes.data);
+          localStorage.setItem('tenantData', JSON.stringify(dashboardRes.data));
+        }
         setIsLoading(false);
         return true;
       }
-      
-      console.log('Tenant login failed - invalid credentials');
       setIsLoading(false);
       return false;
     } catch (error) {
-      console.error('Tenant login error:', error);
       setIsLoading(false);
       return false;
     }

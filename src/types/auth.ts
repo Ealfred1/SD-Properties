@@ -105,30 +105,166 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 };
 
 export interface TenantData {
-  id: string;
+  user: {
+    type: string;
+    id: number;
+    attributes: {
   name: string;
+      email: string;
+      tenant_number: string;
   phone: string;
-  email: string;
-  flatNumber: string;
-  rentAmount: number;
-  expiryDate: string;
-  lastPaymentDate: string;
-  propertyDetails: {
-    bedrooms: number;
-    bathrooms: number;
-    description: string;
-    image: string;
-    address?: string;
-    floor?: string;
+      marital_status: string;
+      gender: string | null;
+      nationality: string | null;
+      occupation: string | null;
+      income: string | null;
+      id_number: string | null;
+      id_type: string | null;
+      id_front_image: string | null;
+      id_back_image: string | null;
+      user_image: string | null;
+      property_unit_id: string;
+      rent_start: string;
+      rent_end: string;
+      is_active: string;
+      created_at: string;
+      updated_at: string;
+    };
+    relationships: {
+      unit: {
+        type: string;
+        id: number;
+        attributes: {
+          name: string;
+          description: string | null;
+          rent_amount: string;
+          rent_frequency: string;
+          is_occupied: string;
+          image: string | null;
+          video: string | null;
+          agreement_file: string | null;
+          payment_receipt: string | null;
+          bed_room: string;
+          bath_room: string;
+          parking: boolean;
+          security: boolean;
+          water: boolean;
+          electricity: boolean;
+          internet: boolean;
+          tv: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        relationships: {
+          property: {
+            type: string;
+            id: number;
+            attributes: {
+              title: string;
+              description: string;
+              address: string;
+              city: string;
+              state: string;
+              price: string;
+              is_available: boolean;
+              rent_price: string | null;
+              rent_frequency: string | null;
+              image: string;
+              video: string | null;
+              status: string;
+              property_type: string;
+              property_category: string;
+              created_at: string;
+              updated_at: string;
+            };
+            relationships: {
+              files: Array<{
+                type: string;
+                id: number;
+                attributes: {
+                  name: string;
+                  path: string;
+                  is_main: string;
+                  order: string;
+                  created_at: string;
+                  updated_at: string;
+                };
+              }>;
+            };
+            links: {
+              self: string;
+            };
+          };
+        };
+      };
+    };
   };
-  maintenanceHistory: MaintenanceRecord[];
-  paymentHistory: PaymentRecord[];
-  documents: Document[];
-  rentStartDate: string;
-  rentExpiryDate: string;
-  agentName?: string;
-  agentPhone?: string;
-  maintenance?: { title: string; date: string }[];
+  property_apartment: {
+    type: string;
+    id: number;
+    attributes: {
+      name: string;
+      description: string | null;
+      rent_amount: string;
+      rent_frequency: string;
+      is_occupied: string;
+      image: string | null;
+      video: string | null;
+      agreement_file: string | null;
+      payment_receipt: string | null;
+      bed_room: string;
+      bath_room: string;
+      parking: boolean;
+      security: boolean;
+      water: boolean;
+      electricity: boolean;
+      internet: boolean;
+      tv: boolean;
+      created_at: string;
+      updated_at: string;
+    };
+    relationships: {
+      property: {
+        type: string;
+        id: number;
+        attributes: {
+          title: string;
+    description: string;
+          address: string;
+          city: string;
+          state: string;
+          price: string;
+          is_available: boolean;
+          rent_price: string | null;
+          rent_frequency: string | null;
+    image: string;
+          video: string | null;
+          status: string;
+          property_type: string;
+          property_category: string;
+          created_at: string;
+          updated_at: string;
+        };
+        relationships: {
+          files: Array<{
+            type: string;
+            id: number;
+            attributes: {
+              name: string;
+              path: string;
+              is_main: string;
+              order: string;
+              created_at: string;
+              updated_at: string;
+            };
+          }>;
+        };
+        links: {
+          self: string;
+        };
+      };
+    };
+  };
 }
 
 export interface MaintenanceRecord {
