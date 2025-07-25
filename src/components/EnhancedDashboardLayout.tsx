@@ -37,6 +37,7 @@ const EnhancedDashboardLayout: React.FC = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showAddMaintenanceModal, setShowAddMaintenanceModal] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [selectedHotel, setSelectedHotel] = useState<any | null>(null);
   const { user, logout, hasPermission } = useAuth();
 
   // Handler to select a property and go to detail view
@@ -49,6 +50,11 @@ const EnhancedDashboardLayout: React.FC = () => {
   const handleBackToProperties = () => {
     setSelectedProperty(null);
     setActiveTab('properties');
+  };
+
+  const handleSelectHotel = (hotel: any) => {
+    setSelectedHotel(hotel);
+    setActiveTab('hotel');
   };
 
   const handleTabChange = (tab: string) => {
@@ -100,13 +106,13 @@ const EnhancedDashboardLayout: React.FC = () => {
           </ProtectedRoute>
         );
       case 'bookings':
-        return <HotelBookingPage />;
+        return <HotelBookingPage onSelectHotel={handleSelectHotel} />;
       case 'users':
         return <UserManagementPage />;
       case 'hotel':
         return (
           <ProtectedRoute requiredPermission="view_dashboard">
-            <HotelBookingSystem />
+            <HotelBookingSystem hotel={selectedHotel} />
           </ProtectedRoute>
         );
       case 'car-hire':

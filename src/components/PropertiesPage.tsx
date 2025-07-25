@@ -37,22 +37,53 @@ interface ApiPropertyResponse {
   };
 }
 
-const transformPropertyData = (data: ApiPropertyResponse[]): Property[] => {
-  return (data || []).map((item) => ({
-    id: item.id,
-    title: item.attributes.title,
-    description: item.attributes.description,
-    address: item.attributes.address,
-    city: item.attributes.city,
-    state: item.attributes.state,
-    price: item.attributes.price,
-    is_available: item.attributes.is_available,
-    image: item.attributes.image,
-    property_type: item.attributes.property_type,
-    property_category: item.attributes.property_category,
-    created_at: item.attributes.created_at,
-    updated_at: item.attributes.updated_at
-  }));
+interface RelationshipFile {
+  type: string;
+  id: number;
+  attributes: {
+    name: string;
+    path: string;
+    is_main: string;
+    order: string;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+interface PropertyApiItem {
+  id: number;
+  attributes: any;
+  relationships?: {
+    files?: RelationshipFile[];
+    [key: string]: any;
+  };
+}
+
+const transformPropertyData = (data: PropertyApiItem[]): Property[] => {
+  return (data || []).map((item) => {
+    let image = null;
+    if (item.relationships && item.relationships.files && item.relationships.files.length > 0) {
+      image = item.relationships.files[0].attributes?.path || null;
+    } else if (item.attributes.image) {
+      image = item.attributes.image;
+    }
+    return {
+      id: item.id,
+      title: item.attributes.title,
+      description: item.attributes.description,
+      address: item.attributes.address,
+      city: item.attributes.city,
+      state: item.attributes.state,
+      price: item.attributes.price,
+      is_available: item.attributes.is_available,
+      image,
+      property_type: item.attributes.property_type,
+      property_category: item.attributes.property_category,
+      created_at: item.attributes.created_at,
+      updated_at: item.attributes.updated_at,
+      relationships: item.relationships || {},
+    };
+  });
 };
 
 interface PropertiesPageProps {
@@ -79,33 +110,17 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ onSelectProperty }) => 
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState('');
 
-  const transformPropertyData = (data: any[]) => {
-    return (data || []).map((item) => ({
-      id: item.id,
-      title: item.attributes.title,
-      description: item.attributes.description,
-      address: item.attributes.address,
-      city: item.attributes.city,
-      state: item.attributes.state,
-      price: item.attributes.price,
-      is_available: item.attributes.is_available,
-      image: item.attributes.image,
-      property_type: item.attributes.property_type,
-      property_category: item.attributes.property_category,
-      created_at: item.attributes.created_at,
-      updated_at: item.attributes.updated_at
-    }));
-  };
-
   useEffect(() => {
     const fetchProperties = async () => {
       setLoading(true);
       setError('');
       try {
-        const res = await apiRequestWithAuth('GET', '/manager/properties');
+        // Fetch with relationships (files, tenants, manager, units)
+        const res = await apiRequestWithAuth('GET', '/manager/properties?include=files,tenants,manager,units');
         setProperties(transformPropertyData(res.data));
-      } catch (err: any) {
-        setError(err?.message || 'Failed to load properties.');
+      } catch (err: unknown) {
+        const error = err as { message?: string };
+        setError(error?.message || 'Failed to load properties.');
       } finally {
         setLoading(false);
       }
@@ -128,10 +143,11 @@ const PropertiesPage: React.FC<PropertiesPageProps> = ({ onSelectProperty }) => 
         title: '', description: '', address: '', city: '', state: '', price: '', is_available: '1', sop: '', property_type: 'rent', property_category: '1',
       });
       // Refresh properties
-      const res = await apiRequestWithAuth('GET', '/manager/properties');
+      const res = await apiRequestWithAuth('GET', '/manager/properties?include=files,tenants,manager,units');
       setProperties(transformPropertyData(res.data));
-    } catch (err: any) {
-      setAddError(err?.message || 'Failed to add property.');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setAddError(error?.message || 'Failed to add property.');
     } finally {
       setAddLoading(false);
     }

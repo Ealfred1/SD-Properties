@@ -67,9 +67,27 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
   const [editUnitError, setEditUnitError] = useState('');
   const [deleteUnitLoading, setDeleteUnitLoading] = useState<number | null>(null);
   const [deleteUnitError, setDeleteUnitError] = useState('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [mainImage, setMainImage] = useState<string>('');
 
   useEffect(() => {
     if (!property) return;
+    // Fetch property with relationships (files, tenants, manager, units) using filter[id]=
+    const fetchPropertyWithFiles = async () => {
+      try {
+        const res = await apiRequestWithAuth('GET', `/manager/properties?filter[id]=${property.id}&include=files,tenants,manager,units`);
+        const prop = Array.isArray(res.data) ? res.data[0] : res.data;
+        const files = prop?.relationships?.files || [];
+        const images = files.map((f: any) => f.attributes?.path).filter(Boolean);
+        setGalleryImages(images);
+        setMainImage(images[0] || property.image || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop');
+      } catch {
+        setGalleryImages([]);
+        setMainImage(property.image || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop');
+      }
+    };
+    fetchPropertyWithFiles();
+
     const fetchMaintenance = async () => {
       setMaintenanceLoading(true);
       setMaintenanceError('');
@@ -330,11 +348,23 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
       await apiRequestWithAuth(
         'PUT',
         `/manager/properties/${property.id}`,
-        editData, // send as plain object, apiRequestWithAuth will JSON.stringify it
-        false // isFormData = false, so Content-Type is application/json
+        editData,
+        false
       );
       setShowEditModal(false);
-      if (onUpdate) onUpdate({ ...property, ...editData });
+      // Re-fetch property details after update
+      const updated = await apiRequestWithAuth('GET', `/manager/properties?filter[id]=${property.id}&include=files,tenants,manager,units`);
+      const prop = Array.isArray(updated.data) ? updated.data[0] : updated.data;
+      const files = prop?.relationships?.files || [];
+      const images = files.map((f: any) => f.attributes?.path).filter(Boolean);
+      setGalleryImages(images);
+      setMainImage(images[0] || prop.image || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop');
+      setEditData(prop);
+      // Update all property fields in the local property object if possible
+      if (property) {
+        Object.assign(property, prop);
+      }
+      if (onUpdate) onUpdate({ ...property, ...prop });
     } catch (err: any) {
       setError(err?.message || 'Failed to update property.');
     } finally {
@@ -378,20 +408,38 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
         formData,
         true
       );
-      // Re-fetch property details to get the new image
-      const updated = await apiRequestWithAuth('GET', `/manager/properties/${property.id}`);
-      const newImage = updated.data?.image || updated.data?.attributes?.image;
-      setEditData((prev) => ({ ...prev, image: newImage }));
-      property.image = newImage;
+      // Re-fetch property details to get the new image (use filter[id] and include)
+      const updated = await apiRequestWithAuth('GET', `/manager/properties?filter[id]=${property.id}&include=files,tenants,manager,units`);
+      const prop = Array.isArray(updated.data) ? updated.data[0] : updated.data;
+      const files = prop?.relationships?.files || [];
+      const images = files.map((f: any) => f.attributes?.path).filter(Boolean);
+      setGalleryImages(images);
+      setMainImage(images[0] || property.image || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop');
+      setEditData((prev) => ({ ...prev, image: images[0] }));
+      property.image = images[0];
       setShowImageModal(false);
       setImageFiles(null);
-      if (onUploadImages) onUploadImages({ ...property, image: newImage });
+      if (onUploadImages) onUploadImages({ ...property, image: images[0] });
     } catch (err: any) {
       setError(err?.message || 'Failed to upload images.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Apartment Units Section - filter units by property id
+  const filteredUnits = units.filter(
+    (unit) => {
+      // Some APIs nest property id under relationships.property.id, some under property_id
+      if (unit.relationships && unit.relationships.property && unit.relationships.property.id) {
+        return String(unit.relationships.property.id) === String(property.id);
+      }
+      if (unit.property_id) {
+        return String(unit.property_id) === String(property.id);
+      }
+      return false;
+    }
+  );
 
   return (
     <div className="flex-1 bg-gray-50">
@@ -407,10 +455,23 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
             {/* Property Image */}
             <div className="mb-4 sm:mb-6">
               <img
-                  src={property.image || 'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop'}
-                  alt={property.title}
+                src={mainImage}
+                alt={property.title}
                 className="w-full h-48 sm:h-56 lg:h-64 object-cover rounded-lg"
               />
+              {galleryImages.length > 1 && (
+                <div className="flex gap-2 mt-2 overflow-x-auto">
+                  {galleryImages.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={img}
+                      alt={`Gallery ${idx}`}
+                      className={`w-16 h-12 object-cover rounded cursor-pointer border-2 ${mainImage === img ? 'border-green-500' : 'border-transparent'}`}
+                      onClick={() => setMainImage(img)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
             {/* Property Info */}
             <div className="mb-4 sm:mb-6">
@@ -521,7 +582,7 @@ const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
               {unitLoading && <div className="text-gray-500">Loading units...</div>}
               {unitError && <div className="text-red-600 mb-2">{unitError}</div>}
               <div className="flex flex-col gap-6">
-                {units.map((unit) => (
+                {filteredUnits.map((unit) => (
                   <div key={unit.id} className="bg-white rounded-xl shadow p-5 flex flex-col gap-3 border border-gray-100">
                     <div className="flex items-center gap-3 mb-1">
                       <Home className="h-5 w-5 text-green-500 flex-shrink-0" />

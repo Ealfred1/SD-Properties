@@ -106,7 +106,20 @@ const TenantManagerPage: React.FC = () => {
     setAddLoading(true);
     setAddError('');
     try {
-      await apiRequestWithAuth('POST', '/manager/tenants/', addForm, false);
+      await apiRequestWithAuth('POST', '/manager/tenants', addForm, false);
+     const res2 = await fetch('https://corsproxy.io/?https://api.saintdaviesproperties.com/api/manager/tenants', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer 23|mK64pNhhIClX7GSbNYLJlLazz24wvPFTn8PPpcyY208a5fcf',
+          },
+          body: JSON.stringify(addForm)
+        });
+
+      console.log(res2, "fetched data")
+
+
+        
       setShowAddModal(false);
       setAddForm({ name: '', email: '', phone: '', marital_status: '', property_unit_id: '', rent_start: '', rent_end: '', password: '' });
       // Refresh tenants

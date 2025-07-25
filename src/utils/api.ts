@@ -1,6 +1,6 @@
 // src/utils/api.ts
 const BASE_URL =
-  import.meta.env.MODE === 'development'
+  import.meta.env.MODE === ''
     ? 'https://corsproxy.io/?https://api.saintdaviesproperties.com/api'
     : 'https://api.saintdaviesproperties.com/api';
 
