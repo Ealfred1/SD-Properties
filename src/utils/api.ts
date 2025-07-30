@@ -9,7 +9,10 @@ export async function apiRequest(
   isFormData?: boolean
 ) {
   const url = `${BASE_URL}${endpoint}`;
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
   let body: string | FormData | undefined = undefined;
 
   if (token) {
@@ -21,6 +24,8 @@ export async function apiRequest(
       // Handle FormData properly
       if (data instanceof FormData) {
         body = data;
+        // Remove Content-Type for FormData - let browser set it with boundary
+        delete headers['Content-Type'];
       } else {
         const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
@@ -48,10 +53,10 @@ export async function apiRequest(
           }
         });
         body = formData;
+        // Remove Content-Type for FormData - let browser set it with boundary
+        delete headers['Content-Type'];
       }
-      // Don't set Content-Type for FormData - let browser set it with boundary
     } else {
-      headers['Content-Type'] = 'application/json';
       body = JSON.stringify(data);
     }
   }
@@ -61,8 +66,47 @@ export async function apiRequest(
       method,
       headers,
       body,
-      redirect: 'follow', // Let fetch handle redirects automatically
+      redirect: 'manual', // Handle redirects manually to avoid CORS issues
+      mode: 'cors', // Enable CORS
+      credentials: 'include', // Include credentials if needed
     });
+
+    // Handle redirects manually
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      if (location) {
+        // For redirects, we need to handle them carefully
+        console.warn('Redirect detected:', location);
+        
+        // If it's a relative redirect, make it absolute
+        const redirectUrl = location.startsWith('http') ? location : `${BASE_URL}${location}`;
+        
+        // Make a new request to the redirect URL
+        const redirectResponse = await fetch(redirectUrl, {
+          method,
+          headers,
+          body,
+          redirect: 'manual',
+          mode: 'cors', // Enable CORS
+          credentials: 'include', // Include credentials if needed
+        });
+
+        const contentType = redirectResponse.headers.get('content-type');
+        let responseData;
+        
+        if (contentType && contentType.includes('application/json')) {
+          responseData = await redirectResponse.json();
+        } else {
+          responseData = await redirectResponse.text();
+        }
+
+        if (!redirectResponse.ok) {
+          throw responseData;
+        }
+        
+        return responseData;
+      }
+    }
 
     const contentType = response.headers.get('content-type');
     let responseData;
@@ -79,55 +123,7 @@ export async function apiRequest(
     
     return responseData;
   } catch (error) {
-    // If we get a redirect error with FormData, try alternative approach
-    if (error instanceof TypeError && 
-        error.message.includes('redirect requiring the body to be retransmitted') &&
-        (isFormData || data instanceof FormData)) {
-      
-      console.warn('FormData redirect error detected, attempting alternative approach...');
-      
-      // Try with manual redirect handling
-      try {
-        const response = await fetch(url, {
-          method,
-          headers,
-          body,
-          redirect: 'manual',
-        });
-
-        // Handle redirect manually
-        if (response.status >= 300 && response.status < 400) {
-          const location = response.headers.get('location');
-          if (location) {
-            // Make sure the redirect URL is absolute
-            const redirectUrl = location.startsWith('http') ? location : `${BASE_URL}${location}`;
-            
-            // For redirects, try the request again to the new URL
-            return apiRequest(method, redirectUrl.replace(BASE_URL, ''), data, token, isFormData);
-          }
-        }
-
-        // Process normal response
-        const contentType = response.headers.get('content-type');
-        let responseData;
-        
-        if (contentType && contentType.includes('application/json')) {
-          responseData = await response.json();
-        } else {
-          responseData = await response.text();
-        }
-
-        if (!response.ok) {
-          throw responseData;
-        }
-        
-        return responseData;
-      } catch (retryError) {
-        console.error('Retry failed:', retryError);
-        throw retryError;
-      }
-    }
-    
+    console.error('API request failed:', error);
     throw error;
   }
 }

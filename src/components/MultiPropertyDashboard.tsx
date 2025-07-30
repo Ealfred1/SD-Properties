@@ -1060,10 +1060,10 @@ const MultiPropertyDashboard: React.FC = () => {
                         }}
                       >
                         <Heart className="h-5 w-5" />
-                      </button>
+              </button>
+            </div>
                     </div>
                   </div>
-                </div>
               ))}
             </div>
           )}
@@ -1106,7 +1106,7 @@ const MultiPropertyDashboard: React.FC = () => {
               ))}
             </div>
           )}
-        </div>
+          </div>
 
         {/* Cars Section */}
         <div className="mb-8">
@@ -1122,7 +1122,7 @@ const MultiPropertyDashboard: React.FC = () => {
           ) : cars.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500">No cars available</p>
-            </div>
+          </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {cars.slice(0, 6).map((car) => (
