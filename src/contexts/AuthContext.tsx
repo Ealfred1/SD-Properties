@@ -176,7 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const res = await apiRequest('POST', '/auth/login', { email, password }, undefined, true);
+      const res = await apiRequest('POST', '/auth/login', { email, password });
       const user = res.data.user;
       const token = res.data.token;
       if (user && user.attributes && user.attributes.role === 'manager') {
@@ -197,9 +197,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
       return false;
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Check for unverified email error
-      if (err?.message && err.message.toLowerCase().includes('not verified')) {
+      if (err && typeof err === 'object' && 'message' in err && typeof err.message === 'string' && err.message.toLowerCase().includes('not verified')) {
         localStorage.setItem('pendingVerification', email);
         window.location.href = '/verify-email';
       }
@@ -214,7 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const formData = new FormData();
       formData.append('tenant_number', tenantId);
       formData.append('password', passcode);
-      const res = await apiRequest('POST', '/tenants/auth/login', formData, true);
+      const res = await apiRequest('POST', '/tenants/auth/login', formData, undefined, true);
       if (res && res.data && res.data.token && res.data.user) {
         const tenantUser: User = {
           id: String(res.data.user.id),

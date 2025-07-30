@@ -1,19 +1,16 @@
 // src/utils/api.ts
-const BASE_URL =
-  import.meta.env.MODE === ''
-    ? 'https://corsproxy.io/?https://api.saintdaviesproperties.com/api'
-    : 'https://api.saintdaviesproperties.com/api';
+const BASE_URL = 'https://api.saintdaviesproperties.com/api';
 
 export async function apiRequest(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   endpoint: string,
-  data?: Record<string, any> | FormData,
+  data?: Record<string, unknown> | FormData,
   token?: string,
   isFormData?: boolean
 ) {
   const url = `${BASE_URL}${endpoint}`;
-  let headers: Record<string, string> = {};
-  let body: any = undefined;
+  const headers: Record<string, string> = {};
+  let body: string | FormData | undefined = undefined;
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -25,31 +22,32 @@ export async function apiRequest(
       if (data instanceof FormData) {
         body = data;
       } else {
-        body = new FormData();
+        const formData = new FormData();
         Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             if (value instanceof FileList) {
               // Handle FileList (multiple files)
               Array.from(value).forEach((file, index) => {
-                body.append(`${key}[${index}]`, file);
+                formData.append(`${key}[${index}]`, file);
               });
             } else if (value instanceof File) {
               // Handle single File
-              body.append(key, value);
+              formData.append(key, value);
             } else if (Array.isArray(value)) {
               // Handle arrays
               value.forEach((item, index) => {
                 if (item instanceof File) {
-                  body.append(`${key}[${index}]`, item);
+                  formData.append(`${key}[${index}]`, item);
                 } else {
-                  body.append(`${key}[${index}]`, String(item));
+                  formData.append(`${key}[${index}]`, String(item));
                 }
               });
             } else {
-              body.append(key, String(value));
+              formData.append(key, String(value));
             }
           }
         });
+        body = formData;
       }
       // Don't set Content-Type for FormData - let browser set it with boundary
     } else {
@@ -137,7 +135,7 @@ export async function apiRequest(
 export async function apiRequestWithAuth(
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
   endpoint: string,
-  data?: Record<string, any> | FormData,
+  data?: Record<string, unknown> | FormData,
   isFormData?: boolean
 ) {
   const token = localStorage.getItem('token');
